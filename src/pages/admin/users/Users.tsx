@@ -10,6 +10,7 @@ import {
   Button,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
+import { ModalComponent } from "../../../component/modal";
 
 type User = {
   id: number;
@@ -18,7 +19,7 @@ type User = {
   role: string;
   team: string;
   level: number;
-  created_at?: string; // Optional, may not be present in all data
+  created_at?: string;
 };
 
 export default function Users() {
@@ -26,7 +27,7 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<number>(1);
-  const [limit, setLimit] = useState<number>(10);
+  const [limit, setLimit] = useState<number>(5);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -34,6 +35,12 @@ export default function Users() {
   const location = useLocation();
   const alert = location.state?.alert;
   const msg = location.state?.msg;
+
+  // state สำหรับ Modal ลบ
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  // state สำหรับ Alert
   const [show, setShow] = useState(false);
 
   function formatDate(d?: string) {
@@ -68,7 +75,7 @@ export default function Users() {
         role: u.role ?? "User",
         team: u.team ?? "-",
         level: Number(u.level) || 0,
-        created_at: u.created_at ?? u.created_at ?? null,
+        created_at: u.created_at ?? null,
       }));
 
       setUsers(normalized);
@@ -82,7 +89,6 @@ export default function Users() {
   }
 
   async function deleteUser(id: number) {
-    if (!confirm("ต้องการลบผู้ใช้นี้หรือไม่?")) return;
     try {
       setLoading(true);
       setError(null);
@@ -97,9 +103,7 @@ export default function Users() {
         throw new Error(body.message || `Server returned ${res.status}`);
       }
       setSuccessMsg(body.message || "ลบผู้ใช้เรียบร้อยแล้ว");
-      // รีเฟรชรายการ
       await fetchUsers();
-      // แสดงข้อความชั่วคราว
       setShow(true);
       setTimeout(() => setShow(false), 3000);
     } catch (e: any) {
@@ -109,12 +113,27 @@ export default function Users() {
     }
   }
 
+  // เปิด modal ยืนยันลบ
+  const handleOpenDelete = (id: number) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleCloseDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteId(null);
+  };
+
+  const handleConfirmDelete = async (id: number) => {
+    await deleteUser(id);
+    handleCloseDelete();
+  };
+
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // refetch when page or limit changes
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,7 +146,6 @@ export default function Users() {
 
       const timer = setTimeout(() => {
         setShow(false);
-        // เคลียร์ location.state หลังแสดงเสร็จ
         navigate(location.pathname, { replace: true });
       }, 3000);
 
@@ -145,13 +163,9 @@ export default function Users() {
       </p>
       <div className="m-2 mb-4 flex items-center justify-end">
         <div className="ml-4 flex items-center space-x-4">
-          <div>
-            {loading ? (
-              <div className="text-sm text-gray-500">กำลังโหลด...</div>
-            ) : null}
-          </div>
+          <div>{loading && <div className="text-sm text-gray-500">กำลังโหลด...</div>}</div>
 
-          <div className="flex items-center space-x-2 ">
+          <div className="flex items-center space-x-2">
             <label className="text-sm text-gray-600">แสดงต่อหน้า:</label>
             <select
               value={limit}
@@ -166,10 +180,7 @@ export default function Users() {
           </div>
 
           <div>
-            <Button
-              onClick={() => navigate("/admin/users/add")}
-              className="cursor-pointer"
-            >
+            <Button onClick={() => navigate("/admin/users/add")}>
               Create Users
             </Button>
           </div>
@@ -187,6 +198,7 @@ export default function Users() {
           <AlertComponent message={error} type="failure" />
         </div>
       )}
+
       {/* มือถือ: Card View */}
       <div className="space-y-3 md:hidden">
         {users.length === 0 && !loading ? (
@@ -240,22 +252,18 @@ export default function Users() {
         ))}
       </div>
 
-      {/* เดสก์ท็อป: Table + แนวนอนเลื่อนได้ */}
+      {/* Table */}
       <div className="hidden overflow-x-auto md:block">
         <Table className="min-w-[900px] table-fixed text-sm">
           <TableHead className="sticky top-0 z-10 bg-white dark:bg-gray-800">
             <TableRow>
-              <TableHeadCell className="whitespace-nowrap">Name</TableHeadCell>
-              <TableHeadCell className="whitespace-nowrap">Email</TableHeadCell>
-              <TableHeadCell className="whitespace-nowrap">Role</TableHeadCell>
-              <TableHeadCell className="whitespace-nowrap">Team</TableHeadCell>
-              <TableHeadCell className="whitespace-nowrap">Level</TableHeadCell>
-              <TableHeadCell className="whitespace-nowrap">
-                Created At
-              </TableHeadCell>
-              <TableHeadCell className="whitespace-nowrap">
-                Action
-              </TableHeadCell>
+              <TableHeadCell>Name</TableHeadCell>
+              <TableHeadCell>Email</TableHeadCell>
+              <TableHeadCell>Role</TableHeadCell>
+              <TableHeadCell>Team</TableHeadCell>
+              <TableHeadCell>Level</TableHeadCell>
+              <TableHeadCell>Created At</TableHeadCell>
+              <TableHeadCell>Action</TableHeadCell>
             </TableRow>
           </TableHead>
           <TableBody className="divide-y">
@@ -264,29 +272,18 @@ export default function Users() {
                 key={user.id}
                 className="bg-white dark:border-gray-700 dark:bg-gray-800"
               >
-                <TableCell className="font-medium whitespace-nowrap text-gray-900 dark:text-white">
-                  {user.name ?? "-"}
-                </TableCell>
-                <TableCell className="break-words">{user.email}</TableCell>
-                <TableCell className="whitespace-nowrap">{user.role}</TableCell>
-                <TableCell className="whitespace-nowrap">{user.team}</TableCell>
-                <TableCell className="whitespace-nowrap">
-                  {user.level}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
-                  {formatDate(user.created_at)}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
+                <TableCell>{user.name ?? "-"}</TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{user.role}</TableCell>
+                <TableCell>{user.team}</TableCell>
+                <TableCell>{user.level}</TableCell>
+                <TableCell>{formatDate(user.created_at)}</TableCell>
+                <TableCell>
                   <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => navigate(`/admin/users/edit/${user.id}`)}
-                      className="cursor-pointer"
-                    >
+                    <Button onClick={() => navigate(`/admin/users/edit/${user.id}`)}>
                       Edit
                     </Button>
-                    <Button color="red" onClick={() => deleteUser(user.id)}
-                      className="cursor-pointer"
-                    >
+                    <Button color="red" outline onClick={() => handleOpenDelete(user.id)}>
                       Delete
                     </Button>
                   </div>
@@ -297,15 +294,11 @@ export default function Users() {
         </Table>
       </div>
 
+      {/* Pagination */}
       <div className="mt-4 flex items-center justify-between">
-        <div>
-          <span className="text-sm text-gray-600">รวม {total} ผู้ใช้</span>
-        </div>
+        <span className="text-sm text-gray-600">รวม {total} ผู้ใช้</span>
         <div className="flex items-center space-x-2">
-          <Button
-            disabled={page <= 1}
-            onClick={() => setPage((s) => Math.max(1, s - 1))}
-          >
+          <Button disabled={page <= 1} onClick={() => setPage((s) => Math.max(1, s - 1))}>
             ก่อนหน้า
           </Button>
           <span className="text-sm text-gray-600">
@@ -319,6 +312,17 @@ export default function Users() {
           </Button>
         </div>
       </div>
+
+      {/* Modal ยืนยันลบ */}
+      {showDeleteModal && (
+        <ModalComponent
+          header="ยืนยันการลบ"
+          msg="คุณต้องการลบผู้ใช้นี้หรือไม่?"
+          id={deleteId ?? undefined}
+          onConfirm={handleConfirmDelete}
+          onClose={handleCloseDelete}
+        />
+      )}
     </div>
   );
 }

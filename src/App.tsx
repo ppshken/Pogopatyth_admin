@@ -13,9 +13,6 @@ import EditUser from "./pages/admin/users/EditUser";
 export default function App() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-      <div className="absolute right-4 bottom-4">
-        <DarkThemeToggle />
-      </div>
 
       <main className="min-h-screen">
         <Routes>

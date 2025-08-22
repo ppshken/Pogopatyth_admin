@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { Button } from "flowbite-react";
+import { DarkThemeToggle } from "flowbite-react";
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
@@ -157,6 +158,9 @@ export default function AdminLayout() {
               Profile
             </NavLink>
           </nav>
+                <div className="absolute right-4 bottom-4">
+                  <DarkThemeToggle />
+                </div>
         </aside>
 
         {/* Backdrop for mobile when menu is open */}
