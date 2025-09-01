@@ -52,7 +52,7 @@ export default function AdminLayout() {
           >
           <div className="mb-6 flex items-center justify-between">
             <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              PokopartyTH
+              PogopartyTH
             </div>
             <button
               className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-sm lg:hidden dark:bg-gray-700"

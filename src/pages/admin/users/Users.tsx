@@ -182,7 +182,7 @@ export default function Users() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search..."
-          className="flex-1 rounded border px-3 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+          className="flex-1 rounded border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500"
         />
         <Button
           onClick={() => {
@@ -193,6 +193,7 @@ export default function Users() {
           ค้นหา
         </Button>
       </div>
+
 
       <div className="m-2 mb-4 flex items-center justify-end">
         <div className="ml-4 flex items-center space-x-4">
