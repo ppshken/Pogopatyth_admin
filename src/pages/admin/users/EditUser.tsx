@@ -6,11 +6,11 @@ import { AlertComponent } from "../../../component/alert";
 export default function EditUser() {
   const { id } = useParams<{ id: string }>();
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [trainerName, setTrainerName] = useState("");
   const [friendCode, setFriendCode] = useState("");
+  const [status, setStatus] = useState("");
   const [level, setLevel] = useState<number | "">("");
-  const [team, setTeam] = useState("Mystic");
   const [loading, setLoading] = useState(false);
   const [alertshow, setAlertshow] = useState(false);
   const [alertmessage, setAlertmessage] = useState("");
@@ -20,7 +20,19 @@ export default function EditUser() {
     try {
       setLoading(true);
       const API_BASE = import.meta.env.VITE_API_BASE;
-      const res = await fetch(`${API_BASE}/user/by_id.php?user_id=${id}`);
+      const token = localStorage.getItem("auth_token");
+
+      const res = await fetch(
+        `${API_BASE}/api/admin/users/detail.php?user_id=${id}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        },
+      );
+
       const data = await res.json();
       if (!res.ok || data.success === false) {
         throw new Error(data.message || "ไม่พบข้อมูลผู้ใช้");
@@ -29,10 +41,10 @@ export default function EditUser() {
 
       // set ค่าไปที่ state เพื่อแสดงในฟอร์ม
       setEmail(u.email ?? "");
-      setTrainerName(u.trainer_name ?? "");
+      setUsername(u.username ?? "");
       setFriendCode(u.friend_code ?? "");
       setLevel(Number(u.level) || "");
-      setTeam(u.team ?? "Mystic");
+      setStatus(u.status);
     } catch (err: any) {
       console.error(err.message);
       setAlertmessage(err.message);
@@ -51,17 +63,22 @@ export default function EditUser() {
     try {
       setLoading(true);
       const API_BASE = import.meta.env.VITE_API_BASE;
-      const res = await fetch(`${API_BASE}/user/update.php`, {
+      const token = localStorage.getItem("auth_token");
+
+      const res = await fetch(`${API_BASE}/api/admin/users/update.php`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
         body: JSON.stringify({
           id,
           email,
+          username: username,
           password: password || undefined, // ส่งเฉพาะถ้าเปลี่ยน
-          trainer_name: trainerName,
           friend_code: friendCode,
           level,
-          team,
+          status,
         }),
       });
 
@@ -108,20 +125,22 @@ export default function EditUser() {
         </div>
 
         <div>
+          <Label>Username</Label>
+          <TextInput
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            shadow
+          />
+        </div>
+
+        <div>
           <Label>Password (ถ้าไม่เปลี่ยนให้เว้นว่าง)</Label>
           <TextInput
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <Label>Trainer Name</Label>
-          <TextInput
-            type="text"
-            value={trainerName}
-            onChange={(e) => setTrainerName(e.target.value)}
           />
         </div>
 
@@ -147,11 +166,14 @@ export default function EditUser() {
         </div>
 
         <div>
-          <Label>Team</Label>
-          <Select value={team} onChange={(e) => setTeam(e.target.value)}>
-            <option>Mystic</option>
-            <option>Valor</option>
-            <option>Instinct</option>
+          <Label>Status</Label>
+          <Select
+            id="status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
+            <option value="active">Active</option>
+            <option value="banned">Banned</option>
           </Select>
         </div>
 

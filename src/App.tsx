@@ -1,4 +1,3 @@
-import { DarkThemeToggle } from "flowbite-react";
 import { Routes, Route } from "react-router";
 import Login from "./pages/Login";
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -9,6 +8,7 @@ import AddUser from "./pages/admin/users/AddUser";
 import Settings from "./pages/admin/Settings";
 import Profile from "./pages/admin/Profile";
 import EditUser from "./pages/admin/users/EditUser";
+import Raidrooms from "./pages/admin/raidrooms/Raidrooms";
 
 export default function App() {
   return (
@@ -33,7 +33,7 @@ export default function App() {
             <Route path="users/edit/:id" element={<EditUser />} />
             <Route path="settings" element={<Settings />} />
             <Route path="raidboss" element={<Settings />} />
-            <Route path="roomraid" element={<Settings />} />
+            <Route path="raidrooms" element={<Raidrooms />} />
           </Route>
         </Routes>
       </main>

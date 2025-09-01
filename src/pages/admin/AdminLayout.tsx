@@ -10,32 +10,21 @@ export default function AdminLayout() {
 
   useEffect(() => {
     const checkUser = async () => {
-      // Check if user is authenticated
-      const session = localStorage.getItem("auth_session");
-      if (!session) {
+      const token = localStorage.getItem("auth_token");
+      const userData = localStorage.getItem("auth_user");
+
+      if (!token || !userData) {
         navigate("/");
         return;
       }
 
       try {
-        const userId = localStorage.getItem("user_id");
-        if (!userId) {
-          navigate("/");
-          return;
-        }
+        const parsedUser = JSON.parse(userData);
 
-        const API_BASE = import.meta.env.VITE_API_BASE;
-        const res = await fetch(`${API_BASE}/user/by_id.php?user_id=${userId}`);
-        const data = await res.json();
-
-        if (!data || !data.success) {
-          navigate("/");
-          return;
-        }
-
-        setUser({ id: data.data.id, name: data.data.trainer_name });
+        // ✅ ไม่ต้องยิง API ก็ได้ เอาจาก localStorage ได้เลย
+        setUser({ id: parsedUser.id, name: parsedUser.username });
       } catch (e) {
-        console.error("Failed to fetch user data", e);
+        console.error("Failed to parse user data", e);
         navigate("/");
       }
     };
@@ -44,11 +33,8 @@ export default function AdminLayout() {
   }, [navigate]);
 
   const handleSignOut = () => {
-    try {
-      localStorage.removeItem("auth_session");
-    } catch (e) {
-      // ignore
-    }
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
     navigate("/");
   };
 
@@ -56,15 +42,14 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex">
         {/* Sidebar - mobile: slide-in, desktop: static */}
-        <aside
-          className={
-            "fixed inset-y-0 left-0 z-30 w-64 transform border-r border-gray-200 bg-white p-4 transition-transform dark:border-gray-700 dark:bg-gray-800 " +
-            (open ? "translate-x-0" : "-translate-x-full") +
-            // บนจอใหญ่เดิมเป็น static → ให้สูงเต็มจอด้วย
-            " lg:static lg:block lg:h-screen lg:translate-x-0"
-          }
-          aria-hidden={!open}
-        >
+          <aside
+            className={
+              "fixed inset-y-0 left-0 z-30 w-64 transform border-r border-gray-200 bg-white p-4 transition-transform dark:border-gray-700 dark:bg-gray-800 " +
+              (open ? "translate-x-0" : "-translate-x-full") +
+              " lg:fixed lg:translate-x-0 lg:h-screen lg:block lg:z-40 overflow-y-auto"
+            }
+            aria-hidden={!open}
+          >
           <div className="mb-6 flex items-center justify-between">
             <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               PokopartyTH
@@ -133,7 +118,7 @@ export default function AdminLayout() {
             </NavLink>
 
             <NavLink
-              to="/admin/roomraid"
+              to="/admin/raidrooms"
               onClick={() => setOpen(false)}
               className={({ isActive }: { isActive: boolean }) =>
                 "rounded-md px-3 py-2 text-sm font-medium " +
@@ -142,7 +127,7 @@ export default function AdminLayout() {
                   : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
               }
             >
-              Roomraid
+              Raidrooms
             </NavLink>
 
             <NavLink
@@ -158,9 +143,9 @@ export default function AdminLayout() {
               Profile
             </NavLink>
           </nav>
-                <div className="absolute right-4 bottom-4">
-                  <DarkThemeToggle />
-                </div>
+          <div className="absolute right-4 bottom-4">
+            <DarkThemeToggle />
+          </div>
         </aside>
 
         {/* Backdrop for mobile when menu is open */}
@@ -173,7 +158,7 @@ export default function AdminLayout() {
         )}
 
         {/* Main content area */}
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col lg:pl-64">
           {/* Top navbar */}
           <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 lg:px-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-4">

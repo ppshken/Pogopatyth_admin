@@ -10,7 +10,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (localStorage.getItem("auth_session") !== null) {
+    if (localStorage.getItem("auth_token") !== null) {
       // Redirect to admin dashboard if already logged in
       navigate("/admin");
     }
@@ -37,26 +37,27 @@ export default function Login() {
     setLoading(true);
     try {
       const API_BASE = import.meta.env.VITE_API_BASE;
-      const res = await fetch(`${API_BASE}/controller/login.php`, {
+      const res = await fetch(`${API_BASE}/api/admin/login.php`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
+
       if (!res.ok || !data.success) {
-        setError("Invalid email or password.");
+        setError(data.message || "Invalid email or password.");
         setLoading(false);
         return;
       }
 
-      // store token (demo)
-      if (data.session_id && data.user_id) {
-        localStorage.setItem("auth_session", data.session_id);
-        localStorage.setItem("user_id", data.user_id);
+      // ✅ เก็บ token และข้อมูล user
+      if (data.data?.token) {
+        localStorage.setItem("auth_token", data.data.token);
+        localStorage.setItem("auth_user", JSON.stringify(data.data.user));
       }
 
-      // redirect to home
+      // ✅ redirect ไปหน้า admin dashboard
       navigate("/admin");
     } catch (e) {
       setError("Network error");

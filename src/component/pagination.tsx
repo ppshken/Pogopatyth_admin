@@ -1,17 +1,22 @@
-
 "use client";
 
 import { Pagination } from "flowbite-react";
-import { useState } from "react";
 
-export function PaginationComponent() {
-  const [currentPage, setCurrentPage] = useState(1);
+type Props = {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+};
 
-  const onPageChange = (page: number) => setCurrentPage(page);
-
+export function PaginationComponent({ currentPage, totalPages, onPageChange }: Props) {
   return (
-    <div className="flex overflow-x-auto sm:justify-center">
-      <Pagination currentPage={currentPage} totalPages={100} onPageChange={onPageChange}/>
+    <div className="flex overflow-x-auto sm:justify-center mt-4">
+      <Pagination
+        currentPage={currentPage}
+        totalPages={Math.max(1, totalPages)} // กันไม่ให้เป็น 0
+        onPageChange={onPageChange}
+        showIcons
+      />
     </div>
   );
 }
