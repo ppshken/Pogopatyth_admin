@@ -39,26 +39,26 @@ try {
         exit;
     }
 
-    $user_id = $_GET['user_id'] ?? null;
-    if (!$user_id) {
+    $raid_boss_id = $_GET['raid_boss_id'] ?? null;
+    if (!$raid_boss_id) {
         http_response_code(400);
-        echo json_encode(["success" => false, "message" => "กรุณาส่ง user_id"]);
+        echo json_encode(["success" => false, "message" => "กรุณาส่ง raid_boss_id"]);
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT id, email, username, friend_code, level, status, created_at FROM users WHERE id = :id");
-    $stmt->execute([":id" => $user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare("SELECT id, pokemon_id, pokemon_name, pokemon_image, pokemon_tier, start_date, end_date, created_at FROM raid_boss WHERE id = :id");
+    $stmt->execute([":id" => $raid_boss_id]);
+    $raidboss = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$user) {
+    if (!$raidboss) {
         http_response_code(404);
-        echo json_encode(["success" => false, "message" => "ไม่พบผู้ใช้"]);
+        echo json_encode(["success" => false, "message" => "ไม่พบบอส"]);
         exit;
     }
 
     echo json_encode([
         "success" => true,
-        "data" => $user
+        "data" => $raidboss
     ]);
 
 } catch (Exception $e) {

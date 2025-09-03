@@ -9,6 +9,7 @@ import Settings from "./pages/admin/Settings";
 import Profile from "./pages/admin/Profile";
 import EditUser from "./pages/admin/users/EditUser";
 import Raidrooms from "./pages/admin/raidrooms/Raidrooms";
+import Raidboss from "./pages/admin/raidboss/Raidboss";
 
 export default function App() {
   return (
@@ -28,12 +29,19 @@ export default function App() {
           >
             <Route index element={<Dashboard />} />
             <Route path="profile" element={<Profile />} />
-            <Route path="users" element={<Users />} />
+            <Route path="users" element={<Users />} />          
             <Route path="users/add" element={<AddUser />} />
             <Route path="users/edit/:id" element={<EditUser />} />
+
             <Route path="settings" element={<Settings />} />
-            <Route path="raidboss" element={<Settings />} />
+
+            <Route path="raidboss" element={<Raidboss />} />
+            <Route path="raidboss/add" element={<Settings />} />
+            <Route path="raidboss/edit" element={<Settings />} />
+
             <Route path="raidrooms" element={<Raidrooms />} />
+            <Route path="raidrooms/add" element={<Raidrooms />} />
+            <Route path="raidrooms/edit/:id" element={<Raidrooms />} />
           </Route>
         </Routes>
       </main>

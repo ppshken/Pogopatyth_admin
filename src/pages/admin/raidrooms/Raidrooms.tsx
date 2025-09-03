@@ -15,7 +15,7 @@ import { ModalComponent } from "../../../component/modal";
 
 type RaidRoom = {
   id: number;
-  pokemon_name: string;
+  boss: string;
   pokemon_image: string;
   owner_name: string;
   max_members: number;
@@ -164,7 +164,7 @@ export default function Raidrooms() {
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="font-semibold text-gray-900 dark:text-white">
-                {r.pokemon_name}
+                {r.boss}
               </div>
               <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-200">
                 {r.max_members} players
@@ -203,7 +203,7 @@ export default function Raidrooms() {
         <Table className="min-w-[800px]">
           <TableHead>
             <TableRow>
-              <TableHeadCell>pokemon_name</TableHeadCell>
+              <TableHeadCell>boss</TableHeadCell>
               <TableHeadCell>owner_name</TableHeadCell>
               <TableHeadCell>Players</TableHeadCell>
               <TableHeadCell>Created</TableHeadCell>
@@ -217,10 +217,10 @@ export default function Raidrooms() {
                   <div className="flex items-center gap-2">
                     <img
                       src={r.pokemon_image}
-                      alt={r.pokemon_name}
+                      alt={r.boss}
                       className="h-8 w-8 rounded-full object-cover"
                     />
-                    <span>{r.pokemon_name}</span>
+                    <span>{r.boss}</span>
                   </div>
                 </TableCell>
                 <TableCell>{r.owner_name}</TableCell>

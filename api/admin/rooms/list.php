@@ -71,7 +71,7 @@ try {
     $sql = "SELECT 
         r.id,
         r.raid_boss_id,
-        r.pokemon_name,
+        r.boss,
         r.pokemon_image,
         r.start_time, 
         r.status, 
@@ -85,10 +85,10 @@ try {
         COUNT(ur.user_id) AS member_total
     FROM raid_rooms r
     JOIN users u ON r.owner_id = u.id
-    LEFT JOIN user_raid_rooms ur ON r.id = ur.raid_room_id
+    LEFT JOIN user_raid_rooms ur ON r.id = ur.room_id
     $whereSql
     GROUP BY 
-        r.id, r.raid_boss_id, r.pokemon_name, r.pokemon_image, r.start_time, 
+        r.id, r.raid_boss_id, r.boss, r.pokemon_image, r.start_time, 
         r.status, r.max_members, r.note, r.avg_rating, r.review_count, r.created_at,
         u.id, u.username
     ORDER BY r.created_at DESC

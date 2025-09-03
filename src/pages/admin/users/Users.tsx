@@ -9,6 +9,7 @@ import {
   TableRow,
   Button,
   Badge,
+  Avatar,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { ModalComponent } from "../../../component/modal";
@@ -18,6 +19,7 @@ type User = {
   id: number;
   username?: string;
   email: string;
+  avatar: string;
   role: string;
   level: number;
   status: string;
@@ -86,6 +88,7 @@ export default function Users() {
         id: Number(u.id) || 0,
         username: u.username ?? "-",
         email: u.email ?? "-",
+        avatar: u.avatar ?? "-",
         role: u.role ?? "User",
         level: Number(u.level) || 0,
         status: u.status,
@@ -324,7 +327,16 @@ export default function Users() {
                 key={user.id}
                 className="bg-white dark:border-gray-700 dark:bg-gray-800"
               >
-                <TableCell>{user.username ?? "-"}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                    <span>{user.username}</span>
+                  </div>
+                </TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
                 <TableCell>{user.level}</TableCell>

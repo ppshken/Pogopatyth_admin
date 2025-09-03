@@ -43,51 +43,42 @@ try {
         throw new Exception("ไม่มีข้อมูลส่งมา");
     }
 
-    $email = trim($data['email'] ?? "");
-    $username = trim($data['username'] ?? "");
-    $password = $data['password'] ?? "";
-    $friend_code = trim($data['friend_code'] ?? "");
-    $level = intval($data['level'] ?? 1);
-    $device_token = trim($data['device_token'] ?? "");
-    $role = $data['role'] ?? "member";
-    $status = $data['status'] ?? "active";
+    $pokemon_id = intval($data['pokemon_id'] ?? 0);
+    $pokemon_name = trim($data['pokemon_name'] ?? "");
+    $pokemon_image = trim($data['pokemon_image'] ?? "");
+    $pokemon_tier = intval($data['pokemon_tier'] ?? 0);
+    $start_date = trim($data['start_date'] ?? "");
+    $end_date = trim($data['end_date'] ?? "");
 
-    if (!$email || !$username || !$password) {
+    if (!$pokemon_id || !$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date || !$end_date) {
         throw new Exception("กรอก email, username และ password");
     }
 
-    // ✅ ตรวจสอบว่า email มีอยู่แล้วหรือไม่
-    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = :email");
-    $checkStmt->execute([":email" => $email]);
+    // ✅ ตรวจสอบว่า pokemon_id มีอยู่แล้วหรือไม่
+    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM raid_boss WHERE pokemon_id = :pokemon_id");
+    $checkStmt->execute([":pokemon_id" => $pokemon_id]);
     $emailExists = $checkStmt->fetchColumn();
 
     if ($emailExists > 0) {
-        throw new Exception("อีเมลนี้ถูกใช้งานแล้ว");
+        throw new Exception("pokemon_id นี้ ถูกเพิ่มแล้ว");
     }
 
-    // ✅ Hash password
-    $password_hash = password_hash($password, PASSWORD_DEFAULT);
-
-    // ✅ Insert
-    $stmt = $pdo->prepare("INSERT INTO users 
-        (email, username, password_hash, friend_code, level, device_token, role, status, created_at) 
-        VALUES (:email, :username, :password_hash, :friend_code, :level, :device_token, :role, :status, NOW())");
+    $stmt = $pdo->prepare("INSERT INTO `raid_boss`(`pokemon_id`, `pokemon_name`, `pokemon_image`, `pokemon_tier`, `start_date`, `end_date`) 
+    VALUES (:pokemon_id, :pokemon_name, :pokemon_image, :pokemon_tier, :start_date, :end_date)");
 
     $stmt->execute([
-        ":email" => $email,
-        ":username" => $username,
-        ":password_hash" => $password_hash,
-        ":friend_code" => $friend_code,
-        ":level" => $level,
-        ":device_token" => $device_token,
-        ":role" => $role,
-        ":status" => $status,
+        ":pokemon_id" => $pokemon_id,
+        ":pokemon_name" => $pokemon_name,
+        ":pokemon_image" => $pokemon_image,
+        ":pokemon_tier" => $pokemon_tier,
+        ":start_date" => $start_date,
+        ":end_date" => $end_date,
     ]);
 
     echo json_encode([
         "success" => true,
-        "message" => "เพิ่มผู้ใช้สำเร็จ",
-        "user_id" => $pdo->lastInsertId()
+        "message" => "เพิ่มบอสสำเร็จ",
+        "raid_boss_id" => $pdo->lastInsertId()
     ]);
 
 } catch (Exception $e) {

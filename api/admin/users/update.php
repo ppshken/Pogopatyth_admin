@@ -64,7 +64,7 @@ try {
     ];
 
     if (!empty($password)) {
-        $sql .= ", password = :password";
+        $sql .= ", password_hash = :password";
         $params[":password"] = password_hash($password, PASSWORD_BCRYPT);
     }
 

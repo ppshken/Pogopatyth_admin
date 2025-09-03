@@ -59,10 +59,10 @@ try {
 
     // ✅ Boss ที่นิยมมากสุด (วันนี้)
     $stmt = $pdo->query("
-        SELECT pokemon_name, COUNT(*) as count
+        SELECT boss, COUNT(*) as count
         FROM raid_rooms
         WHERE DATE(created_at) = CURDATE()
-        GROUP BY pokemon_name
+        GROUP BY boss
         ORDER BY count DESC
         LIMIT 1
     ");

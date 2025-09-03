@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit();
 }
-// api/admin/users/by_id.php
+// api/admin/users/delete.php
 
 header("Content-Type: application/json; charset=UTF-8");
 require_once __DIR__ . "/../../config/db.php";
@@ -39,27 +39,49 @@ try {
         exit;
     }
 
-    $user_id = $_GET['user_id'] ?? null;
-    if (!$user_id) {
+    $input = json_decode(file_get_contents("php://input"), true);
+    $raid_boss_id = $input['raid_boss_id'] ?? null;
+
+    if (!$raid_boss_id) {
         http_response_code(400);
-        echo json_encode(["success" => false, "message" => "กรุณาส่ง user_id"]);
+        echo json_encode(["success" => false, "message" => "กรุณาส่ง raid_boss_id"]);
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT id, email, username, friend_code, level, status, created_at FROM users WHERE id = :id");
-    $stmt->execute([":id" => $user_id]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    // ตรวจสอบว่ามี user อยู่จริง
+    $stmt = $pdo->prepare("SELECT id FROM raid_boss WHERE id = :id");
+    $stmt->execute([":id" => $raid_boss_id]);
+    $exists = $stmt->fetchColumn();
 
-    if (!$user) {
+    if (!$exists) {
         http_response_code(404);
-        echo json_encode(["success" => false, "message" => "ไม่พบผู้ใช้"]);
+        echo json_encode(["success" => false, "message" => "ไม่พบบอส"]);
         exit;
     }
 
-    echo json_encode([
-        "success" => true,
-        "data" => $user
-    ]);
+    try {
+        $stmt = $pdo->prepare("DELETE FROM raid_boss WHERE id = :id");
+        $stmt->execute(['id' => $raid_boss_id]);
+
+        echo json_encode([
+            "success" => true,
+            "message" => "ลบบอสเรียบร้อยแล้ว"
+        ]);
+    } catch (PDOException $e) {
+        if ($e->getCode() == "23000") { // Foreign key constraint fail
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "message" => "ไม่สามารถลบบอสนี้ได้ เนื่องจากยังมีห้องที่สร้างอยู่ ต้องลบห้องก่อน"
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode([
+                "success" => false,
+                "message" => "เกิดข้อผิดพลาด: " . $e->getMessage()
+            ]);
+        }
+    }
 
 } catch (Exception $e) {
     http_response_code(401);
