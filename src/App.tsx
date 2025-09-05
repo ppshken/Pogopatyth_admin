@@ -10,6 +10,7 @@ import Profile from "./pages/admin/Profile";
 import EditUser from "./pages/admin/users/EditUser";
 import Raidrooms from "./pages/admin/raidrooms/Raidrooms";
 import Raidboss from "./pages/admin/raidboss/Raidboss";
+import AddRaidboss from "./pages/admin/raidboss/AddRaidboss";
 
 export default function App() {
   return (
@@ -36,7 +37,7 @@ export default function App() {
             <Route path="settings" element={<Settings />} />
 
             <Route path="raidboss" element={<Raidboss />} />
-            <Route path="raidboss/add" element={<Settings />} />
+            <Route path="raidboss/add" element={<AddRaidboss />} />
             <Route path="raidboss/edit" element={<Settings />} />
 
             <Route path="raidrooms" element={<Raidrooms />} />

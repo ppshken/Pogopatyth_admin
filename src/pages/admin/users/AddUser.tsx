@@ -74,11 +74,12 @@ export default function AddUser() {
         </div>
       )}
 
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-2">
         <div>
           <Label>Email</Label>
           <TextInput
             type="email"
+            placeholder="กรุณากรอก อีเมลล์"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required

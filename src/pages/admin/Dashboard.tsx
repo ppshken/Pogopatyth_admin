@@ -51,8 +51,9 @@ export default function Dashboard() {
       </p>
 
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
         {/* Users */}
-        <div className="rounded-lg border bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div  className="rounded-lg border bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="text-sm text-gray-500 dark:text-gray-300">ผู้ใช้งาน</div>
           <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-gray-100">
             {data?.users.total.toLocaleString()}
