@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Button, Label, TextInput, Select } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
+import { getErrorMessage } from "../../../component/functions/getErrorMessage";
 
 export default function AddUser() {
   const [email, setEmail] = useState("");
@@ -54,8 +55,8 @@ export default function AddUser() {
       navigate("/admin/users", {
         state: { alert: "success", msg: data.message || "เพิ่มผู้ใช้เรียบร้อย" },
       });
-    } catch (err: any) {
-      setAlertmessage(err.message || "เกิดข้อผิดพลาด");
+    } catch (err) {
+      setAlertmessage(getErrorMessage(err) || "เกิดข้อผิดพลาด");
       setAlertshow(true);
     } finally {
       setLoading(false);
@@ -63,9 +64,9 @@ export default function AddUser() {
   }
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl p-4">
       <h3 className="mb-4 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-        Add User
+        เพิ่มผู้ใช้ใหม่
       </h3>
 
       {alertshow && (
@@ -74,7 +75,7 @@ export default function AddUser() {
         </div>
       )}
 
-      <form onSubmit={onSubmit} className="space-y-2">
+      <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <Label>Email</Label>
           <TextInput
@@ -147,7 +148,7 @@ export default function AddUser() {
           <Label>Status</Label>
           <Select value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="banned">Banned</option>
           </Select>
         </div>
 

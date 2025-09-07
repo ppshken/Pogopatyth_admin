@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Button, Label, TextInput, Select } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
+import { getErrorMessage } from "../../../component/functions/getErrorMessage";
 
 export default function EditUser() {
   const { id } = useParams<{ id: string }>();
@@ -45,9 +46,9 @@ export default function EditUser() {
       setFriendCode(u.friend_code ?? "");
       setLevel(Number(u.level) || "");
       setStatus(u.status);
-    } catch (err: any) {
-      console.error(err.message);
-      setAlertmessage(err.message);
+    } catch (err) {
+      console.error(getErrorMessage(err.message));
+      setAlertmessage(getErrorMessage(err.message));
       setAlertshow(true);
     } finally {
       setLoading(false);
@@ -91,8 +92,8 @@ export default function EditUser() {
       navigate("/admin/users", {
         state: { alert: "success", msg: data.message || "อัปเดตเรียบร้อย" },
       });
-    } catch (err: any) {
-      setAlertmessage(err.message || "เกิดข้อผิดพลาด");
+    } catch (err) {
+      setAlertmessage(getErrorMessage(err.message) || "เกิดข้อผิดพลาด");
       setAlertshow(true);
     } finally {
       setLoading(false);
@@ -100,9 +101,9 @@ export default function EditUser() {
   }
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl p-4">
       <h3 className="mb-4 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-        Edit User
+        แก้ไขผู้ใช้งาน
       </h3>
 
       {alertshow && (

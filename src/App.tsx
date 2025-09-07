@@ -5,12 +5,12 @@ import RequireAuth from "./pages/admin/RequireAuth";
 import Dashboard from "./pages/admin/Dashboard";
 import Users from "./pages/admin/users/Users";
 import AddUser from "./pages/admin/users/AddUser";
-import Settings from "./pages/admin/Settings";
-import Profile from "./pages/admin/Profile";
 import EditUser from "./pages/admin/users/EditUser";
 import Raidrooms from "./pages/admin/raidrooms/Raidrooms";
+import RaidroomsDetail from "./pages/admin/raidrooms/RaidroomsDetail";
 import Raidboss from "./pages/admin/raidboss/Raidboss";
 import AddRaidboss from "./pages/admin/raidboss/AddRaidboss";
+import EditRaidboss from "./pages/admin/raidboss/EditRaidboss";
 
 export default function App() {
   return (
@@ -18,8 +18,11 @@ export default function App() {
 
       <main className="min-h-screen">
         <Routes>
+          {/* Login */}
           <Route path="/" element={<Login />} />
+          <Route path="login" element={<Login />} />
 
+          {/* Admin */}
           <Route
             path="/admin"
             element={
@@ -29,20 +32,21 @@ export default function App() {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="profile" element={<Profile />} />
+
+            {/* User Management */}
             <Route path="users" element={<Users />} />          
             <Route path="users/add" element={<AddUser />} />
             <Route path="users/edit/:id" element={<EditUser />} />
 
-            <Route path="settings" element={<Settings />} />
-
+            {/* Raidboss Management */}
             <Route path="raidboss" element={<Raidboss />} />
             <Route path="raidboss/add" element={<AddRaidboss />} />
-            <Route path="raidboss/edit" element={<Settings />} />
+            <Route path="raidboss/edit/:id" element={<EditRaidboss />} />
 
+            {/* Raidrooms Management */}
             <Route path="raidrooms" element={<Raidrooms />} />
             <Route path="raidrooms/add" element={<Raidrooms />} />
-            <Route path="raidrooms/edit/:id" element={<Raidrooms />} />
+            <Route path="raidrooms/raidroomsdetail/:id" element={<RaidroomsDetail />} />
           </Route>
         </Routes>
       </main>

@@ -91,18 +91,6 @@ export default function AdminLayout() {
               Users
             </NavLink>
 
-            <NavLink
-              to="/admin/settings"
-              onClick={() => setOpen(false)}
-              className={({ isActive }: { isActive: boolean }) =>
-                "rounded-md px-3 py-2 text-sm font-medium " +
-                (isActive
-                  ? "bg-primary-600 text-white"
-                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
-              }
-            >
-              Settings
-            </NavLink>
 
             <NavLink
               to="/admin/raidboss"
@@ -130,18 +118,6 @@ export default function AdminLayout() {
               Raidrooms
             </NavLink>
 
-            <NavLink
-              to="/admin/profile"
-              onClick={() => setOpen(false)}
-              className={({ isActive }: { isActive: boolean }) =>
-                "rounded-md px-3 py-2 text-sm font-medium " +
-                (isActive
-                  ? "bg-primary-600 text-white"
-                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
-              }
-            >
-              Profile
-            </NavLink>
           </nav>
           <div className="absolute right-4 bottom-4">
             <DarkThemeToggle />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Login as LoginComponent } from "../component/login";
+import { getErrorMessage } from "../component/functions/getErrorMessage";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -60,7 +61,7 @@ export default function Login() {
       // ✅ redirect ไปหน้า admin dashboard
       navigate("/admin");
     } catch (e) {
-      setError("Network error");
+      setError(getErrorMessage(e.message) || "Network error");
     } finally {
       setLoading(false);
     }

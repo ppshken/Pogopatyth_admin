@@ -66,7 +66,7 @@ try {
     $stmt->execute([$roomId]);
 
     // ✅ ลบความสัมพันธ์ในตาราง user_raid_rooms ด้วย
-    $stmt = $pdo->prepare("DELETE FROM user_raid_rooms WHERE raid_room_id = ?");
+    $stmt = $pdo->prepare("DELETE FROM user_raid_rooms WHERE room_id = ?");
     $stmt->execute([$roomId]);
 
     echo json_encode([

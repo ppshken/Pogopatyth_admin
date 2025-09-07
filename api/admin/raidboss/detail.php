@@ -39,7 +39,7 @@ try {
         exit;
     }
 
-    $raid_boss_id = $_GET['raid_boss_id'] ?? null;
+    $raid_boss_id = $_GET['id'] ?? null;
     if (!$raid_boss_id) {
         http_response_code(400);
         echo json_encode(["success" => false, "message" => "กรุณาส่ง raid_boss_id"]);

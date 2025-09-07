@@ -40,7 +40,7 @@ try {
     }
 
     $input = json_decode(file_get_contents("php://input"), true);
-    $raid_boss_id = $input['raid_boss_id'] ?? null;
+    $raid_boss_id = $input['id'] ?? null;
 
     if (!$raid_boss_id) {
         http_response_code(400);
