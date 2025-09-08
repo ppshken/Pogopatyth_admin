@@ -207,7 +207,7 @@ export default function AddRaidboss() {
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              Add Raid Boss
+              เพิ่มบอสใหม่
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               เพิ่มข้อมูลบอสใหม่ พร้อมตั้งช่วงวันที่และรูปภาพ
@@ -242,7 +242,7 @@ export default function AddRaidboss() {
           <div className="md:col-span-2 space-y-4">
             {/* Card: Basic info */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-blue-500 to-indigo-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
@@ -294,7 +294,7 @@ export default function AddRaidboss() {
 
             {/* Card: Schedule */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
@@ -330,7 +330,7 @@ export default function AddRaidboss() {
           {/* Right: Image */}
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-fuchsia-500 via-purple-500 to-indigo-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <Button

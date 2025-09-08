@@ -1,6 +1,6 @@
 <?php
 $host = "localhost";
-$dbname = "pogopartyth_v1";
+$dbname = "pogopartyth_v2";
 $username = "root";
 $password = "";
 

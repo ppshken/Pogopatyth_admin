@@ -283,7 +283,7 @@ export default function RaidroomsDetail() {
           {/* Hero card */}
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             {/* header stripe */}
-            <div className="h-2 w-full bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400" />
+            <div className="h-2 w-full" />
 
             <div className="p-5">
               <div className="flex items-start gap-4">
