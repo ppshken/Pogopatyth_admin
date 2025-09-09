@@ -10,6 +10,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import Users from "./pages/admin/users/Users";
 import AddUser from "./pages/admin/users/AddUser";
 import EditUser from "./pages/admin/users/EditUser";
+import UserDetail from "./pages/admin/users/UserDetail";
 
 // Raidrooms
 import Raidrooms from "./pages/admin/raidrooms/Raidrooms";
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="users" element={<Users />} />          
             <Route path="users/add" element={<AddUser />} />
             <Route path="users/edit/:id" element={<EditUser />} />
+            <Route path="users/detail/:id" element={<UserDetail />} />
 
             {/* Raidboss Management */}
             <Route path="raidboss" element={<Raidboss />} />

@@ -393,6 +393,9 @@ export default function Users() {
                     <TableCell className="whitespace-nowrap">{formatDate(u.created_at)}</TableCell>
                     <TableCell className="text-right">
                       <Dropdown label="ตัวเลือก" size="xs" dismissOnClick={true} inline>
+                        <DropdownItem onClick={() => navigate(`/admin/users/detail/${u.id}`)}>
+                          ดูรายละเอียด
+                        </DropdownItem>
                         <DropdownItem onClick={() => navigate(`/admin/users/edit/${u.id}`)}>
                           แก้ไข
                         </DropdownItem>

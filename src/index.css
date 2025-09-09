@@ -3,3 +3,30 @@
 @source "../.flowbite-react/class-list.json";
 
 @custom-variant dark (&:where(.dark, .dark *));
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* cursor สำหรับปุ่ม/ทริกเกอร์ทั้งหมด */
+@layer base {
+  /* ปุ่มปกติ */
+  button,
+  [type="button"],
+  [type="submit"],
+  [role="button"] {
+    @apply cursor-pointer;
+  }
+
+  /* ปุ่ม/ลิงก์ที่ Flowbite ใช้ภายใน (กันเผื่อ) */
+  .btn,
+  .flowbite-btn {
+    @apply cursor-pointer;
+  }
+
+  /* สภาวะ disabled */
+  button:disabled,
+  [disabled] {
+    @apply cursor-not-allowed;
+  }
+}
