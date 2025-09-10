@@ -331,9 +331,12 @@ export default function Users() {
                 </div>
 
                 <div className="mt-3">
-                  <Dropdown label="ตัวเลือก" size="xs" dismissOnClick={true}>
+                  <Dropdown label="เลือก" size="xs" dismissOnClick={true}>
                     <DropdownItem onClick={() => navigate(`/admin/users/edit/${u.id}`)}>
                       แก้ไข
+                    </DropdownItem>
+                    <DropdownItem onClick={() => navigate(`/admin/users/detail/${u.id}`)}>
+                      ดูรายละเอียด
                     </DropdownItem>
                     <DropdownDivider />
                     <DropdownItem onClick={() => handleOpenDelete(u.id)}>
@@ -352,13 +355,13 @@ export default function Users() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[26%]">Name</TableHeadCell>
-                  <TableHeadCell className="w-[22%]">Email</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">Role</TableHeadCell>
-                  <TableHeadCell className="w-[10%]">Level</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">Status</TableHeadCell>
-                  <TableHeadCell className="w-[14%]">Created At</TableHeadCell>
-                  <TableHeadCell className="w-[8%] text-right">Action</TableHeadCell>
+                  <TableHeadCell className="w-[26%]">ชื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[22%]">อีเมลล์</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">ระดับ</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">เลเวล</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">สถานะ</TableHeadCell>
+                  <TableHeadCell className="w-[14%]">สร้างเมื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[8%]">จัดการ</TableHeadCell>
                 </TableRow>
               </TableHead>
 
@@ -392,7 +395,7 @@ export default function Users() {
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{formatDate(u.created_at)}</TableCell>
                     <TableCell className="text-right">
-                      <Dropdown label="ตัวเลือก" size="xs" dismissOnClick={true} inline>
+                      <Dropdown label="เลือก" size="xs" dismissOnClick={true} inline>
                         <DropdownItem onClick={() => navigate(`/admin/users/detail/${u.id}`)}>
                           ดูรายละเอียด
                         </DropdownItem>

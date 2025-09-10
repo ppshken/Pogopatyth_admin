@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Button, Spinner } from "flowbite-react";
 import { AlertComponent } from "../../component/alert";
 import { getErrorMessage } from "../../component/functions/getErrorMessage";
+import DashboardUserLeaders from "../../component/DashboardUserLeaders";
 
 /* ---------- Types ---------- */
 type DashboardData = {
@@ -79,7 +80,7 @@ export default function Dashboard() {
       const API_BASE = import.meta.env.VITE_API_BASE as string;
       const token = localStorage.getItem("auth_token") || "";
 
-      const res = await fetch(`${API_BASE}/api/admin/dashboard.php`, {
+      const res = await fetch(`${API_BASE}/api/admin/dashboard/dashboard.php`, {
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
         },
@@ -222,6 +223,9 @@ export default function Dashboard() {
             </Button>
           </div>
         </div>
+
+        {/* ... ส่วน Overview และ Cards เดิม */}
+        <DashboardUserLeaders />
       </div>
     </div>
   );

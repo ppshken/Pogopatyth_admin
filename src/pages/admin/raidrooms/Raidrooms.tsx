@@ -350,14 +350,14 @@ export default function Raidrooms() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[24%]">Boss</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">Owner</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">Players</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">Status</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">Start Time</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">Countdown</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">Created At</TableHeadCell>
-                  <TableHeadCell className="w-[8%] text-right">Action</TableHeadCell>
+                  <TableHeadCell className="w-[24%]">บอส</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">หัวห้อง</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">จำนวนสมาชิก</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">สถานะห้อง</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">เวลาเริ่ม</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">นับถอยหลัง</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">สร้างเมื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[8%] text-right">จัดการ</TableHeadCell>
                 </TableRow>
               </TableHead>
 

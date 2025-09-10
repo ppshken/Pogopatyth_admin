@@ -219,7 +219,7 @@ export default function Notifications() {
                 </p>
 
                 <div className="mt-3">
-                  <Dropdown label="ตัวเลือก" size="xs" dismissOnClick>
+                  <Dropdown label="เลือก" size="xs" dismissOnClick>
                     <DropdownItem onClick={() => onOpenView(n)}>
                       ดูรายละเอียด
                     </DropdownItem>
@@ -240,13 +240,11 @@ export default function Notifications() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[26%]">Title</TableHeadCell>
-                  <TableHeadCell className="w-[42%]">Message</TableHeadCell>
-                  <TableHeadCell className="w-[10%]">Target</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">Created At</TableHeadCell>
-                  <TableHeadCell className="w-[10%] text-right">
-                    Action
-                  </TableHeadCell>
+                  <TableHeadCell className="w-[26%]">หัวเรื่อง</TableHeadCell>
+                  <TableHeadCell className="w-[42%]">ข้อความ</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">เป้าหมาย</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">สร้างเมื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">จัดการ</TableHeadCell>
                 </TableRow>
               </TableHead>
               <TableBody className="divide-y">
@@ -287,7 +285,7 @@ export default function Notifications() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Dropdown
-                        label="ตัวเลือก"
+                        label="เลือก"
                         size="xs"
                         dismissOnClick
                         inline

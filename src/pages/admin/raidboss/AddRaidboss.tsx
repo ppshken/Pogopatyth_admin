@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Button, TextInput, Label, Select, Alert, Spinner } from "flowbite-react";
+import {
+  Button,
+  TextInput,
+  Label,
+  Select,
+  Alert,
+  Spinner,
+} from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { getErrorMessage } from "../../../component/functions/getErrorMessage";
 
@@ -10,7 +17,7 @@ type FormState = {
   pokemon_name: string;
   pokemon_tier: string;
   start_date: string; // input[type=date] -> "YYYY-MM-DD"
-  end_date: string;   // input[type=date] -> "YYYY-MM-DD"
+  end_date: string; // input[type=date] -> "YYYY-MM-DD"
   imageMode: "url" | "upload";
   pokemon_image_url: string;
   imageFile: File | null;
@@ -35,10 +42,20 @@ function fromInputValue(v?: string) {
 
 /* Avatar fallback (ตัวอักษรแรก + สีคงที่) */
 const AVATAR_COLORS = [
-  "bg-rose-500","bg-orange-500","bg-amber-500","bg-lime-500",
-  "bg-emerald-500","bg-teal-500","bg-cyan-500","bg-sky-500",
-  "bg-blue-500","bg-indigo-500","bg-violet-500","bg-purple-500",
-  "bg-fuchsia-500","bg-pink-500",
+  "bg-rose-500",
+  "bg-orange-500",
+  "bg-amber-500",
+  "bg-lime-500",
+  "bg-emerald-500",
+  "bg-teal-500",
+  "bg-cyan-500",
+  "bg-sky-500",
+  "bg-blue-500",
+  "bg-indigo-500",
+  "bg-violet-500",
+  "bg-purple-500",
+  "bg-fuchsia-500",
+  "bg-pink-500",
 ];
 function hashString(s: string): number {
   let h = 0;
@@ -53,14 +70,22 @@ function FallbackAvatar({
   name,
   id,
   size = 28, // px
-}: { name?: string; id?: string; size?: number }) {
-  const key = (name?.toLowerCase() || `mon_${id ?? ""}`);
+}: {
+  name?: string;
+  id?: string;
+  size?: number;
+}) {
+  const key = name?.toLowerCase() || `mon_${id ?? ""}`;
   const color = AVATAR_COLORS[hashString(key) % AVATAR_COLORS.length];
   const cls = `rounded-lg ${color} flex items-center justify-center font-semibold uppercase text-white ring-1 ring-black/10`;
   return (
     <div
       className={cls}
-      style={{ width: size, height: size, fontSize: Math.max(12, Math.floor(size * 0.42)) }}
+      style={{
+        width: size,
+        height: size,
+        fontSize: Math.max(12, Math.floor(size * 0.42)),
+      }}
       title={name || (id ? `#${id}` : "pokemon")}
     >
       {getInitial(name, id)}
@@ -69,6 +94,18 @@ function FallbackAvatar({
 }
 
 export default function AddRaidboss() {
+
+  const POKE_BASE =
+  "https://www.pokemon.com/static-assets/content-assets/cms2/img/pokedex/full";
+
+  const buildPokeUrl = (rawId: string) => {
+    const digits = rawId.replace(/\D/g, "");      // เอาตัวเลขล้วน
+    if (!digits) return "";
+    const n = Number(digits);
+    const idStr = n < 1000 ? String(n).padStart(3, "0") : String(n); // 001..999, 1000+
+    return `${POKE_BASE}/${idStr}.png`;
+  };
+
   const [form, setForm] = useState<FormState>({
     pokemon_id: "",
     pokemon_name: "",
@@ -79,6 +116,16 @@ export default function AddRaidboss() {
     pokemon_image_url: "",
     imageFile: null,
   });
+
+  const handleChange = (name: keyof FormState, value: any) => {
+    setForm(prev => {
+      const next = { ...prev, [name]: value };
+      if (name === "pokemon_id") {
+        next.pokemon_image_url = buildPokeUrl(value);
+      }
+      return next;
+    });
+  };
 
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
@@ -113,7 +160,8 @@ export default function AddRaidboss() {
 
   function validate(): string | null {
     if (!form.pokemon_id.trim()) return "กรุณากรอก Pokemon ID";
-    if (!/^\d+$/.test(form.pokemon_id.trim())) return "Pokemon ID ต้องเป็นตัวเลข";
+    if (!/^\d+$/.test(form.pokemon_id.trim()))
+      return "Pokemon ID ต้องเป็นตัวเลข";
     if (!form.pokemon_name.trim()) return "กรุณากรอกชื่อโปเกม่อน";
     if (!form.pokemon_tier.trim()) return "กรุณาเลือก Tier";
     if (!form.start_date) return "กรุณาเลือกวันเริ่ม";
@@ -124,13 +172,18 @@ export default function AddRaidboss() {
     if (start && end && start > end) return "วันเริ่มต้องไม่มากกว่าวันสิ้นสุด";
 
     if (form.imageMode === "url") {
-      if (form.pokemon_image_url && !/^https?:\/\//i.test(form.pokemon_image_url)) {
+      if (
+        form.pokemon_image_url &&
+        !/^https?:\/\//i.test(form.pokemon_image_url)
+      ) {
         return "รูปแบบ URL รูปไม่ถูกต้อง (ต้องขึ้นต้นด้วย http:// หรือ https://)";
       }
     } else {
       if (!form.imageFile) return "กรุณาอัปโหลดไฟล์รูปหรือสลับไปโหมด URL";
-      if (!/^image\//.test(form.imageFile.type)) return "ไฟล์ต้องเป็นรูปภาพเท่านั้น";
-      if (form.imageFile.size > 2 * 1024 * 1024) return "ไฟล์รูปต้องไม่เกิน 2MB";
+      if (!/^image\//.test(form.imageFile.type))
+        return "ไฟล์ต้องเป็นรูปภาพเท่านั้น";
+      if (form.imageFile.size > 2 * 1024 * 1024)
+        return "ไฟล์รูปต้องไม่เกิน 2MB";
     }
     return null;
   }
@@ -217,7 +270,11 @@ export default function AddRaidboss() {
             <Button color="gray" onClick={() => navigate("/admin/raidboss")}>
               ยกเลิก
             </Button>
-            <Button onClick={handleSubmit} disabled={submitting} aria-busy={submitting}>
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting}
+              aria-busy={submitting}
+            >
               {submitting && <Spinner size="sm" className="mr-2" />}
               บันทึก
             </Button>
@@ -239,21 +296,21 @@ export default function AddRaidboss() {
         {/* Content */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {/* Left: Basic + Schedule */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="space-y-4 md:col-span-2">
             {/* Card: Basic info */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
               <div className="h-1 w-full" />
               <div className="p-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <Label htmlFor="pokemon_id">Pokemon ID</Label>
+                    <Label htmlFor="pokemon_id">โปเกม่อนไอดี</Label>
                     <TextInput
                       id="pokemon_id"
                       type="number"
                       inputMode="numeric"
                       placeholder="เช่น 384"
                       value={form.pokemon_id}
-                      onChange={(e) => change("pokemon_id", e.target.value)}
+                      onChange={(e) => handleChange("pokemon_id", e.target.value)}
                       required
                     />
                     <p className="mt-1 text-xs text-gray-500">
@@ -262,7 +319,7 @@ export default function AddRaidboss() {
                   </div>
 
                   <div>
-                    <Label htmlFor="pokemon_name">Pokemon Name</Label>
+                    <Label htmlFor="pokemon_name">ชื่อโปเกม่อน</Label>
                     <TextInput
                       id="pokemon_name"
                       placeholder="เช่น Rayquaza"
@@ -273,7 +330,7 @@ export default function AddRaidboss() {
                   </div>
 
                   <div>
-                    <Label htmlFor="pokemon_tier">Pokemon Tier</Label>
+                    <Label htmlFor="pokemon_tier">เทียร์โปเกม่อน</Label>
                     <Select
                       id="pokemon_tier"
                       value={form.pokemon_tier}
@@ -298,7 +355,7 @@ export default function AddRaidboss() {
               <div className="p-4">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <Label htmlFor="start_date">Start Date</Label>
+                    <Label htmlFor="start_date">วันที่เริ่มต้น</Label>
                     <TextInput
                       id="start_date"
                       type="date"
@@ -309,7 +366,7 @@ export default function AddRaidboss() {
                   </div>
 
                   <div>
-                    <Label htmlFor="end_date">End Date</Label>
+                    <Label htmlFor="end_date">วันที่สิ้นสุด</Label>
                     <TextInput
                       id="end_date"
                       type="date"
@@ -337,6 +394,7 @@ export default function AddRaidboss() {
                     size="xs"
                     color={form.imageMode === "url" ? "info" : "light"}
                     onClick={() => change("imageMode", "url")}
+                    className="dark:text-white"
                   >
                     ใช้ URL
                   </Button>
@@ -344,6 +402,7 @@ export default function AddRaidboss() {
                     size="xs"
                     color={form.imageMode === "upload" ? "info" : "light"}
                     onClick={() => change("imageMode", "upload")}
+                    className="dark:text-white"
                   >
                     อัปโหลดไฟล์
                   </Button>
@@ -356,7 +415,9 @@ export default function AddRaidboss() {
                       id="pokemon_image_url"
                       placeholder="https://..."
                       value={form.pokemon_image_url}
-                      onChange={(e) => change("pokemon_image_url", e.target.value)}
+                      onChange={(e) =>
+                        change("pokemon_image_url", e.target.value)
+                      }
                     />
                     <p className="text-xs text-gray-500">
                       รองรับลิงก์ http/https เท่านั้น
@@ -370,7 +431,9 @@ export default function AddRaidboss() {
                       type="file"
                       accept="image/*"
                       className="mt-1 block w-full text-sm file:mr-3 file:rounded file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200"
-                      onChange={(e) => change("imageFile", e.target.files?.[0] || null)}
+                      onChange={(e) =>
+                        change("imageFile", e.target.files?.[0] || null)
+                      }
                     />
                     <p className="text-xs text-gray-500">
                       ไฟล์ไม่เกิน 2MB (PNG/JPG/WebP)
@@ -391,20 +454,30 @@ export default function AddRaidboss() {
                         className="h-28 w-28 rounded-lg object-cover ring-1 ring-gray-200"
                       />
                     ) : (
-                      <FallbackAvatar name={form.pokemon_name} id={form.pokemon_id} size={112} />
+                      <FallbackAvatar
+                        name={form.pokemon_name}
+                        id={form.pokemon_id}
+                        size={112}
+                      />
                     )}
                     <div className="text-xs text-gray-600 dark:text-gray-300">
                       <div>
                         <span className="text-gray-500">Name:</span>{" "}
-                        <span className="font-medium">{form.pokemon_name || "-"}</span>
+                        <span className="font-medium">
+                          {form.pokemon_name || "-"}
+                        </span>
                       </div>
                       <div>
                         <span className="text-gray-500">ID:</span>{" "}
-                        <span className="font-medium">{form.pokemon_id || "-"}</span>
+                        <span className="font-medium">
+                          {form.pokemon_id || "-"}
+                        </span>
                       </div>
                       <div>
                         <span className="text-gray-500">Tier:</span>{" "}
-                        <span className="font-medium">{form.pokemon_tier || "-"}</span>
+                        <span className="font-medium">
+                          {form.pokemon_tier || "-"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -412,10 +485,18 @@ export default function AddRaidboss() {
 
                 {/* Actions (duplicate for mobile ergonomics) */}
                 <div className="mt-4 flex gap-2 md:hidden">
-                  <Button color="gray" className="flex-1" onClick={() => navigate("/admin/raidboss")}>
+                  <Button
+                    color="gray"
+                    className="flex-1"
+                    onClick={() => navigate("/admin/raidboss")}
+                  >
                     ยกเลิก
                   </Button>
-                  <Button className="flex-1" onClick={handleSubmit} disabled={submitting}>
+                  <Button
+                    className="flex-1"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                  >
                     {submitting && <Spinner size="sm" className="mr-2" />}
                     บันทึก
                   </Button>
@@ -425,7 +506,8 @@ export default function AddRaidboss() {
 
             {/* Tips */}
             <div className="rounded-lg border border-dashed border-gray-300 p-3 text-xs text-gray-600 dark:border-gray-700 dark:text-gray-300">
-              แนะนำ: ตั้งช่วงวันที่ให้ครอบคลุมการหมุนเวียนบอส และตั้งรูปภาพให้ตรงตามบอสเพื่อให้ผู้ใช้จดจำได้ง่าย
+              แนะนำ: ตั้งช่วงวันที่ให้ครอบคลุมการหมุนเวียนบอส
+              และตั้งรูปภาพให้ตรงตามบอสเพื่อให้ผู้ใช้จดจำได้ง่าย
             </div>
           </div>
         </div>

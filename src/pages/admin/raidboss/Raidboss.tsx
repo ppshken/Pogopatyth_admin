@@ -350,7 +350,7 @@ export default function RaidBosses() {
                   </div>
 
                   <div className="mt-3">
-                    <Dropdown label="ตัวเลือก" size="xs" dismissOnClick>
+                    <Dropdown label="เลือก" size="xs" dismissOnClick>
                       <DropdownItem onClick={() => navigate(`/admin/raidboss/edit/${b.id}`)}>
                         แก้ไข
                       </DropdownItem>
@@ -372,13 +372,13 @@ export default function RaidBosses() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[28%]">Pokemon</TableHeadCell>
-                  <TableHeadCell className="w-[10%]">Tier</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">Start</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">End</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">Status</TableHeadCell>
-                  <TableHeadCell className="w-[14%]">Created</TableHeadCell>
-                  <TableHeadCell className="w-[8%] text-right">Action</TableHeadCell>
+                  <TableHeadCell className="w-[28%]">โปเกม่อน</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">ระดับ</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">วันที่เริ่มต้น</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">วันที่สิ้นสุด</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">สถานะ</TableHeadCell>
+                  <TableHeadCell className="w-[14%]">สร้างเมื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[8%]">จัดการ</TableHeadCell>
                 </TableRow>
               </TableHead>
 
@@ -423,7 +423,7 @@ export default function RaidBosses() {
                       </TableCell>
 
                       <TableCell className="text-right">
-                        <Dropdown label="ตัวเลือก" size="xs" dismissOnClick inline>
+                        <Dropdown label="เลือก" size="xs" dismissOnClick inline>
                           <DropdownItem onClick={() => navigate(`/admin/raidboss/edit/${b.id}`)}>
                             แก้ไข
                           </DropdownItem>

@@ -102,13 +102,21 @@ function formatFriendCode(v?: string | null) {
 }
 function calcAvg(reviews?: UserReview[] | null): number | null {
   if (!reviews || reviews.length === 0) return null;
-  const vals = reviews.map((r) => Number(r.rating)).filter((n) => !Number.isNaN(n));
+  const vals = reviews
+    .map((r) => Number(r.rating))
+    .filter((n) => !Number.isNaN(n));
   if (vals.length === 0) return null;
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
 /** ⭐ แสดงดาว 0..5 รองรับค่าเป็นทศนิยม (เช่น 4.3) */
-function StarRating({ value = 0, size = 16 }: { value?: number | null; size?: number }) {
+function StarRating({
+  value = 0,
+  size = 16,
+}: {
+  value?: number | null;
+  size?: number;
+}) {
   const v = Math.max(0, Math.min(5, Number(value ?? 0)));
   const stars = new Array(5).fill(0).map((_, i) => {
     const idx = i + 1;
@@ -116,7 +124,13 @@ function StarRating({ value = 0, size = 16 }: { value?: number | null; size?: nu
     if (v >= idx) fill = "currentColor";
     else if (v > i && v < idx) fill = "url(#grad)"; // ครึ่งดาวง่ายๆ
     return (
-      <svg key={i} width={size} height={size} viewBox="0 0 20 20" className="inline-block">
+      <svg
+        key={i}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        className="inline-block"
+      >
         <defs>
           <linearGradient id="grad">
             <stop offset={`${(v - i) * 100}%`} stopColor="currentColor" />
@@ -148,13 +162,19 @@ function UserAvatar({
 }) {
   const clsSize = `h-[${size}px] w-[${size}px]`;
   if (src) {
-    return <img src={src} alt={username || "avatar"} className={`${clsSize} rounded-full object-cover ring-1 ring-gray-200`} />;
+    return (
+      <img
+        src={src}
+        alt={username || "avatar"}
+        className={`${clsSize} rounded-full object-cover ring-1 ring-gray-200`}
+      />
+    );
   }
-  const key = (username?.toLowerCase() || `user_${id ?? 0}`);
+  const key = username?.toLowerCase() || `user_${id ?? 0}`;
   const color = AVATAR_COLORS[hashString(key) % AVATAR_COLORS.length];
   return (
     <div
-      className={`${clsSize} ${color} rounded-full flex items-center justify-center font-semibold uppercase text-white ring-1 ring-black/10`}
+      className={`${clsSize} ${color} flex items-center justify-center rounded-full font-semibold text-white uppercase ring-1 ring-black/10`}
       title={username || (id ? `#${id}` : "user")}
       style={{ width: size, height: size }}
     >
@@ -205,7 +225,9 @@ export default function UserDetail() {
         setUser(json.data.user);
         setStats(json.data.stats ?? null);
         setReviews(Array.isArray(json.data.reviews) ? json.data.reviews : []);
-        setActivities(Array.isArray(json.data.activities) ? json.data.activities : []);
+        setActivities(
+          Array.isArray(json.data.activities) ? json.data.activities : [],
+        );
       } else {
         setUser(json.data as UserBase);
         setStats(null);
@@ -243,7 +265,9 @@ export default function UserDetail() {
         {/* Header */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">รายละเอียดผู้ใช้</h3>
+            <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              รายละเอียดผู้ใช้
+            </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               ข้อมูลโปรไฟล์ สถิติการใช้งาน รีวิว และกิจกรรมล่าสุดของผู้ใช้
             </p>
@@ -252,7 +276,9 @@ export default function UserDetail() {
             <Button color="light" onClick={() => fetchDetail()}>
               รีเฟรช
             </Button>
-            <Button onClick={() => navigate(`/admin/users/edit/${id}`)}>แก้ไข</Button>
+            <Button onClick={() => navigate(`/admin/users/edit/${id}`)}>
+              แก้ไข
+            </Button>
             <Button color="gray" onClick={() => navigate(-1)}>
               กลับ
             </Button>
@@ -288,29 +314,57 @@ export default function UserDetail() {
               {/* Card: User */}
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                 <div className="flex items-start gap-3">
-                  <UserAvatar src={user.avatar} username={user.username} id={user.id} size={64} />
+                  <UserAvatar
+                    src={user.avatar}
+                    username={user.username}
+                    id={user.id}
+                    size={64}
+                  />
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="truncate text-lg font-semibold text-gray-900 dark:text-white">
-                        {user.username} <span className="text-xs text-gray-500">#{user.id}</span>
+                        {user.username}{" "}
+                        <span className="text-xs text-gray-500">
+                          #{user.id}
+                        </span>
                       </h4>
                       {user.status && (
-                        <Badge color={user.status === "active" ? "success" : "failure"}>{user.status}</Badge>
+                        <Badge
+                          color={
+                            user.status === "active" ? "success" : "failure"
+                          }
+                        >
+                          {user.status}
+                        </Badge>
                       )}
                     </div>
-                    <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">{user.email}</div>
+                    <div className="mt-1 text-xs text-gray-600 dark:text-gray-300">
+                      {user.email}
+                    </div>
                     <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <div className="text-gray-500 dark:text-gray-400">Friend Code</div>
-                        <div className="font-medium dark:text-white">{formatFriendCode(user.friend_code)}</div>
+                        <div className="text-gray-500 dark:text-gray-400">
+                          Friend Code
+                        </div>
+                        <div className="font-medium dark:text-white">
+                          {formatFriendCode(user.friend_code)}
+                        </div>
                       </div>
                       <div>
-                        <div className="text-gray-500 dark:text-gray-400">Level</div>
-                        <div className="font-medium dark:text-white">{user.level ?? "-"}</div>
+                        <div className="text-gray-500 dark:text-gray-400">
+                          Level
+                        </div>
+                        <div className="font-medium dark:text-white">
+                          {user.level ?? "-"}
+                        </div>
                       </div>
                       <div className="col-span-2">
-                        <div className="text-gray-500 dark:text-gray-400">สร้างเมื่อ</div>
-                        <div className="font-medium dark:text-white">{formatDate(user.created_at)}</div>
+                        <div className="text-gray-500 dark:text-gray-400">
+                          สร้างเมื่อ
+                        </div>
+                        <div className="font-medium dark:text-white">
+                          {formatDate(user.created_at)}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -319,30 +373,44 @@ export default function UserDetail() {
 
               {/* Card: Stats */}
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <h4 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">สถิติการใช้งาน</h4>
+                <h4 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                  สถิติการใช้งาน
+                </h4>
                 <div className="grid grid-cols-2 gap-3 text-center">
                   <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
                     <div className="text-xs text-gray-500">ห้องที่สร้าง</div>
-                    <div className="text-xl font-bold dark:text-white">{stats?.rooms_owned ?? "—"}</div>
+                    <div className="text-xl font-bold dark:text-white">
+                      {stats?.rooms_owned ?? "—"}
+                    </div>
                   </div>
                   <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
                     <div className="text-xs text-gray-500">ห้องที่เข้าร่วม</div>
-                    <div className="text-xl font-bold dark:text-white">{stats?.rooms_joined ?? "—"}</div>
+                    <div className="text-xl font-bold dark:text-white">
+                      {stats?.rooms_joined ?? "—"}
+                    </div>
                   </div>
                   <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
                     <div className="text-xs text-gray-500">จำนวนรีวิว</div>
-                    <div className="text-xl font-bold dark:text-white">{stats?.reviews_count ?? reviews.length}</div>
+                    <div className="text-xl font-bold dark:text-white">
+                      {stats?.reviews_count ?? reviews.length}
+                    </div>
                   </div>
                   <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-                    <div className="text-xs text-gray-500">ใช้งานครั้งล่าสุด</div>
-                    <div className="text-sm font-medium dark:text-white">{formatDate(stats?.last_active_at)}</div>
+                    <div className="text-xs text-gray-500">
+                      ใช้งานครั้งล่าสุด
+                    </div>
+                    <div className="text-sm font-medium dark:text-white">
+                      {formatDate(stats?.last_active_at)}
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Card: Rating */}
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <h4 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">เรตติ้งโดยรวม</h4>
+                <h4 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                  เรตติ้งโดยรวม
+                </h4>
                 <div className="flex items-center gap-3">
                   <StarRating value={avgRating ?? 0} size={18} />
                   <div className="text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -358,8 +426,12 @@ export default function UserDetail() {
             {/* Reviews */}
             <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">รีวิวของผู้ใช้</h4>
-                <div className="text-sm text-gray-500">รวม {stats?.reviews_count ?? reviews.length} รายการ</div>
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  รีวิวของผู้ใช้
+                </h4>
+                <div className="text-sm text-gray-500">
+                  รวม {stats?.reviews_count ?? reviews.length} รายการ
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -367,7 +439,9 @@ export default function UserDetail() {
                   <TableHead>
                     <TableRow>
                       <TableHeadCell className="w-[12%]">คะแนน</TableHeadCell>
-                      <TableHeadCell className="w-[24%]">ห้อง/บอส</TableHeadCell>
+                      <TableHeadCell className="w-[24%]">
+                        ห้อง/บอส
+                      </TableHeadCell>
                       <TableHeadCell>ความคิดเห็น</TableHeadCell>
                       <TableHeadCell className="w-[18%]">วันที่</TableHeadCell>
                     </TableRow>
@@ -375,30 +449,45 @@ export default function UserDetail() {
                   <TableBody className="divide-y">
                     {reviews.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="py-6 text-center text-gray-500">
+                        <TableCell
+                          colSpan={4}
+                          className="py-6 text-center text-gray-500"
+                        >
                           ยังไม่มีรีวิว
                         </TableCell>
                       </TableRow>
                     ) : (
                       reviews.map((rv) => (
-                        <TableRow key={rv.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
+                        <TableRow
+                          key={rv.id}
+                          className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                        >
                           <TableCell className="whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <StarRating value={rv.rating} size={14} />
-                              <span className="font-semibold">{Number(rv.rating).toFixed(1)}</span>
+                              <span className="font-semibold">
+                                {Number(rv.rating).toFixed(1)}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="min-w-0">
                               <div className="truncate font-medium">
-                                {rv.room_boss ?? (rv.room_id ? `Room #${rv.room_id}` : "-")}
+                                {rv.room_boss ??
+                                  (rv.room_id ? `Room #${rv.room_id}` : "-")}
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="truncate">{rv.comment || "-"}</div>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">{formatDate(rv.created_at)}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="items-center flex gap-3">
+                              {" "}
+                              {formatDate(rv.created_at)}
+                              <Button size="sm" onClick={() => navigate(`/admin/raidrooms/raidroomsdetail/${rv.room_id}`)}>ดูข้อมูล</Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -410,8 +499,12 @@ export default function UserDetail() {
             {/* Activities */}
             <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
               <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">การเคลื่อนไหวล่าสุด</h4>
-                <div className="text-sm text-gray-500">รวม {activities.length} รายการ</div>
+                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  การเคลื่อนไหวล่าสุด
+                </h4>
+                <div className="text-sm text-gray-500">
+                  รวม {activities.length} รายการ
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -427,7 +520,10 @@ export default function UserDetail() {
                   <TableBody className="divide-y">
                     {activities.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="py-6 text-center text-gray-500">
+                        <TableCell
+                          colSpan={4}
+                          className="py-6 text-center text-gray-500"
+                        >
                           ยังไม่มีข้อมูลการเคลื่อนไหว
                         </TableCell>
                       </TableRow>
@@ -435,15 +531,25 @@ export default function UserDetail() {
                       activities.map((ac) => (
                         <TableRow key={`${ac.type}-${ac.id ?? ac.created_at}`}>
                           <TableCell className="whitespace-nowrap">
-                            <Badge color={TypeColor[ac.type] ?? "gray"}>{ac.type}</Badge>
+                            <Badge color={TypeColor[ac.type] ?? "gray"}>
+                              {ac.type}
+                            </Badge>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             <div className="truncate">{ac.title || "-"}</div>
                           </TableCell>
                           <TableCell>
-                            <div className="truncate">{ac.description || "-"}</div>
+                            <div className="truncate">
+                              {ac.description || "-"}
+                            </div>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">{formatDate(ac.created_at)}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="items-center flex gap-3">
+                              {" "}
+                              {formatDate(ac.created_at)}
+                              <Button size="sm" onClick={() => navigate(`/admin/raidrooms/raidroomsdetail/${ac.meta?.room_id}`)}>ดูข้อมูล</Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
