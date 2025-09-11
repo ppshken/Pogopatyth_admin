@@ -144,6 +144,20 @@ export default function AdminLayout() {
               Notifications
             </NavLink>
 
+            <NavLink
+              to="/admin/reports"
+              onClick={() => setOpen(false)}
+              className={({ isActive }: { isActive: boolean }) =>
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium " +
+                (isActive
+                  ? "bg-primary-600 text-white"
+                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
+              }
+            >
+              <IoNotificationsOutline />
+              Reports
+            </NavLink>
+
           </nav>
           <div className="absolute right-4 bottom-4">
             <DarkThemeToggle />

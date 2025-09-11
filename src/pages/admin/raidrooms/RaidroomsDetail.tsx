@@ -16,6 +16,7 @@ import {
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { formatDate } from "../../../component/functions/formatDate";
+import { ModalComponent } from "../../../component/modal";
 import { getErrorMessage } from "../../../component/functions/getErrorMessage";
 
 type Room = {
@@ -83,6 +84,12 @@ export default function RaidroomsDetail() {
   const [error, setError] = useState<string | null>(null);
 
   const [reviews, setReviews] = useState<RaidReview[]>([]);
+
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [show, setShow] = useState(false);
 
   // countdown แบบเรียลไทม์
   const [now, setNow] = useState(() => Date.now());
@@ -243,6 +250,58 @@ export default function RaidroomsDetail() {
     }
   }
 
+  async function deleteRoom(id: number) {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const API_BASE = import.meta.env.VITE_API_BASE;
+      const token = localStorage.getItem("auth_token");
+
+      const res = await fetch(`${API_BASE}/api/admin/rooms/delete.php`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      const body = await res.json();
+      if (!res.ok || body.success === false) {
+        throw new Error(body.message || `Server returned ${res.status}`);
+      }
+
+    // ✅ ข้อความที่จะส่งกลับไปแสดงที่หน้ารายการ
+    const msgText = body.message || "ลบห้องเรียบร้อยแล้ว";
+
+    // ✅ กลับไปหน้ารายการ พร้อม state สำหรับแสดง Alert
+    navigate("/admin/raidrooms", {
+      replace: true,                     // กันผู้ใช้กด Back แล้วเจอหน้า detail ที่ถูกลบ
+      state: { alert: "success", msg: msgText },
+    });
+    } catch (e) {
+      setError(getErrorMessage(e) || "เกิดข้อผิดพลาดในการลบ");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleOpenDelete = (id: number) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleCloseDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteId(null);
+  };
+
+  const handleConfirmDelete = async (id: number) => {
+    await deleteRoom(id);
+    handleCloseDelete();
+  };
+
   return (
     <div className="p-4">
       {/* Top bar */}
@@ -256,6 +315,14 @@ export default function RaidroomsDetail() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            color="red"
+            type="button"
+            disabled={!room}
+            onClick={() => room && handleOpenDelete(room.id)}
+          >
+            ลบ
+          </Button>
           <Button
             color="light"
             onClick={fetchDetail}
@@ -696,6 +763,17 @@ export default function RaidroomsDetail() {
         <div className="mx-auto mt-4 max-w-screen-xl">
           <AlertComponent type="info" message="กำลังโหลดข้อมูล..." />
         </div>
+      )}
+
+      {/* Modal ยืนยันลบ */}
+      {showDeleteModal && (
+        <ModalComponent
+          header="ยืนยันการลบ"
+          msg="คุณต้องการลบห้องนี้หรือไม่?"
+          id={deleteId ?? undefined}
+          onConfirm={handleConfirmDelete}
+          onClose={handleCloseDelete}
+        />
       )}
     </div>
   );

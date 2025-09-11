@@ -25,6 +25,9 @@ import EditRaidboss from "./pages/admin/raidboss/EditRaidboss";
 import Notifications from "./pages/admin/notifications/Notifications";
 import AddNotifications from "./pages/admin/notifications/AddNotifications";
 
+//Reports
+import Reports from "./pages/admin/report/Report";
+
 export default function App() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -66,6 +69,9 @@ export default function App() {
             <Route path="notifications" element={<Notifications />} />
             <Route path="notifications/add" element={<AddNotifications />} />
             <Route path="raidrooms/notificatinosdetail/:id" element={<RaidroomsDetail />} />
+
+            {/* Report Management */}
+            <Route path="reports" element={<Reports />} />
           </Route>
         </Routes>
       </main>
