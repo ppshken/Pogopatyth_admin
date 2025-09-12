@@ -9,7 +9,8 @@ import {
   IoPeopleOutline,
   IoPawOutline,
   IoInvertMode,
-  IoNotificationsOutline
+  IoNotificationsOutline,
+  IoWarningOutline
  } from "react-icons/io5";
 
 export default function AdminLayout() {
@@ -154,7 +155,7 @@ export default function AdminLayout() {
                   : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
               }
             >
-              <IoNotificationsOutline />
+              <IoWarningOutline />
               Reports
             </NavLink>
 

@@ -314,12 +314,14 @@ export default function UserDetail() {
               {/* Card: User */}
               <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
                 <div className="flex items-start gap-3">
-                  <UserAvatar
-                    src={user.avatar}
-                    username={user.username}
-                    id={user.id}
-                    size={64}
-                  />
+                  <div className="w-30 h-30">
+                    <UserAvatar
+                      src={user.avatar}
+                      username={user.username}
+                      id={user.id}
+                      size={64}
+                    />
+                  </div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="truncate text-lg font-semibold text-gray-900 dark:text-white">
