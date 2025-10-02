@@ -22,6 +22,7 @@ import { AlertComponent } from "../../../component/alert";
 import { PaginationComponent } from "../../../component/pagination";
 import { formatDate } from "../../../component/functions/formatDate";
 import { getErrorMessage } from "../../../component/functions/getErrorMessage";
+import { ModalComponent } from "../../../component/modal";
 
 /* ---------- Types ---------- */
 type NotificationItem = {
@@ -44,8 +45,6 @@ export default function Notifications() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState<number>(0);
 
-  const [search, setSearch] = useState("");
-
   // Copy success alert
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -53,6 +52,10 @@ export default function Notifications() {
   // View modal
   const [openView, setOpenView] = useState(false);
   const [viewItem, setViewItem] = useState<NotificationItem | null>(null);
+
+  // Delete modal
+  const [openDelete, setOpenDelete] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<NotificationItem | null>(null);
 
   const navigate = useNavigate();
 
@@ -72,9 +75,7 @@ export default function Notifications() {
       const API_BASE = import.meta.env.VITE_API_BASE;
       const token = localStorage.getItem("auth_token");
 
-      const url = `${API_BASE}/api/admin/notifications/list.php?page=${page}&limit=${limit}&search=${encodeURIComponent(
-        search,
-      )}`;
+      const url = `${API_BASE}/api/admin/notifications/list.php?page=${page}&limit=${limit}`;
 
       const res = await fetch(url, {
         method: "GET",
@@ -132,6 +133,48 @@ export default function Notifications() {
     }
   }
 
+  // ลบการแจ้งเตือน
+  async function onDeleteNotification(n: NotificationItem) {
+    if (!n || !n.id) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const API_BASE = import.meta.env.VITE_API_BASE;
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(
+        `${API_BASE}/api/admin/notifications/delete.php`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+          body: JSON.stringify({ id: n.id }),
+        },
+      );
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const body = await res.json();
+      if (!body || body.success === false) {
+        throw new Error(body?.message || "API error");
+      }
+      // Refresh list
+      fetchNotifications();
+      setSuccessMsg(body.message || "ลบการแจ้งเตือนเรียบร้อย");
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2500);
+    } catch (err) {
+      setError(getErrorMessage(err) || "เกิดข้อผิดพลาด");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // เปิด modal ลบแจ้งเตือน
+  const OpenModalDelete = (n: NotificationItem) => {
+    setDeleteItem(n);
+    setOpenDelete(true);
+  };
+
   return (
     <div className="p-4">
       <div className="mx-auto max-w-screen-xl">
@@ -139,7 +182,7 @@ export default function Notifications() {
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              การแจ้งเตือน (Notifications)
+              แจ้งเตือน (Notifications)
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               รายการประกาศ/แจ้งเตือนที่ส่งถึงผู้ใช้
@@ -148,7 +191,6 @@ export default function Notifications() {
 
           {/* Search + Limit */}
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-
             <div className="flex items-center gap-2 sm:pl-2">
               <label className="text-sm text-gray-600 dark:text-gray-300">
                 แสดงต่อหน้า:
@@ -165,7 +207,10 @@ export default function Notifications() {
               </select>
             </div>
 
-            <Button onClick={() => navigate("/admin/notifications/add")} className="sm:ml-2">
+            <Button
+              onClick={() => navigate("/admin/notifications/add")}
+              className="sm:ml-2"
+            >
               สร้างการแจ้งเตือนใหม่
             </Button>
           </div>
@@ -284,18 +329,20 @@ export default function Notifications() {
                       {formatDate(n.created_at)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Dropdown
-                        label="เลือก"
-                        size="xs"
-                        dismissOnClick
-                        inline
-                      >
+                      <Dropdown label="เลือก" size="xs" dismissOnClick inline>
                         <DropdownItem onClick={() => onOpenView(n)}>
                           ดูรายละเอียด
                         </DropdownItem>
-                        <DropdownDivider />
                         <DropdownItem onClick={() => onCopyMessage(n)}>
                           คัดลอกข้อความ
+                        </DropdownItem>
+                        <DropdownDivider />
+                        <DropdownItem
+                          onClick={() => {
+                            OpenModalDelete(n);
+                          }}
+                        >
+                          <span className="text-red-600">ลบ</span>
                         </DropdownItem>
                       </Dropdown>
                     </TableCell>
@@ -356,6 +403,21 @@ export default function Notifications() {
             )}
           </ModalFooter>
         </Modal>
+
+        {/* Delete modal */}
+        {openDelete && deleteItem && (
+          <ModalComponent
+            header="ยืนยันการลบการแจ้งเตือน"
+            msg="คุณแน่ใจหรือไม่ว่าต้องการลบการแจ้งเตือนนี้?"
+            id={deleteItem.id}
+            onConfirm={() => {
+              onDeleteNotification(deleteItem);
+              setOpenDelete(false);
+            }}
+            onClose={() => setOpenDelete(false)}
+            show={openDelete}
+          />
+        )}
       </div>
     </div>
   );

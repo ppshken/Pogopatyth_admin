@@ -4,6 +4,7 @@ import { Button, Spinner } from "flowbite-react";
 import { AlertComponent } from "../../component/alert";
 import { getErrorMessage } from "../../component/functions/getErrorMessage";
 import DashboardUserLeaders from "../../component/DashboardUserLeaders";
+import RecentActivities from "../../component/RecentActivities";
 
 /* ---------- Types ---------- */
 type DashboardData = {
@@ -119,7 +120,7 @@ export default function Dashboard() {
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              Overview
+              ภาพรวม (Dashboard)
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               สรุปสถิติและข้อมูลสำคัญของระบบ
@@ -226,6 +227,9 @@ export default function Dashboard() {
 
         {/* ... ส่วน Overview และ Cards เดิม */}
         <DashboardUserLeaders />
+
+        {/* Recent Activities */}
+        <RecentActivities />
       </div>
     </div>
   );

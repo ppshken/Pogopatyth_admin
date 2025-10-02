@@ -12,7 +12,6 @@ import {
   Modal,
   ModalHeader,
   ModalBody,
-  ModalFooter,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { PaginationComponent } from "../../../component/pagination";
@@ -119,7 +118,7 @@ export default function Reports() {
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              รายการรายงาน (Reports)
+              รายงาน (Reports)
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               ตรวจสอบรายงานจากผู้ใช้

@@ -14,14 +14,20 @@ type ModalProps = {
   id?: number;
   onConfirm?: (id: number) => void;
   onClose?: () => void;
+  show?: boolean;
 };
 
-export function ModalComponent({ header, msg, id, onConfirm, onClose }: ModalProps) {
+export function ModalComponent({
+  header,
+  msg,
+  id,
+  onConfirm,
+  onClose,
+}: ModalProps) {
   const handleDelete = () => {
     if (id && onConfirm) {
       onConfirm(id);
     }
-    if (onClose) onClose();
   };
 
   return (
@@ -36,10 +42,10 @@ export function ModalComponent({ header, msg, id, onConfirm, onClose }: ModalPro
       </ModalBody>
       <ModalFooter>
         <Button onClick={handleDelete} color="red">
-          Delete
+          ยืนยัน
         </Button>
         <Button color="alternative" onClick={onClose}>
-          Cancel
+          ยกเลิก
         </Button>
       </ModalFooter>
     </Modal>

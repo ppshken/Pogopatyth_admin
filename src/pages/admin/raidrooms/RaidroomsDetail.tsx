@@ -88,8 +88,8 @@ export default function RaidroomsDetail() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [show, setShow] = useState(false);
+  const [kickUserId, setKickUserId] = useState<number | null>(null);
+  const [showKickModal, setShowKickModal] = useState(false);
 
   // countdown แบบเรียลไทม์
   const [now, setNow] = useState(() => Date.now());
@@ -98,6 +98,7 @@ export default function RaidroomsDetail() {
     return () => clearInterval(t);
   }, []);
 
+  // สีของสถานะ
   const statusColor: Record<
     string,
     "success" | "indigo" | "red" | "gray" | "warning" | "info"
@@ -108,12 +109,14 @@ export default function RaidroomsDetail() {
     closed: "gray",
   };
 
+  // แปลงวันที่เวลาท้องถิ่นจากสตริง "YYYY-MM-DD HH:mm:ss"
   function parseLocalDate(s?: string | null): Date | null {
     if (!s) return null;
     const normalized = s.includes("T") ? s : s.replace(" ", "T");
     const d = new Date(normalized);
     return isNaN(d.getTime()) ? null : d;
   }
+  // แปลงมิลลิวินาทีเป็นรูปแบบ "Xd HH:MM:SS"
   function formatDuration(ms: number) {
     const total = Math.max(0, Math.floor(ms / 1000));
     const d = Math.floor(total / 86400);
@@ -125,11 +128,13 @@ export default function RaidroomsDetail() {
     const ss = String(s).padStart(2, "0");
     return d > 0 ? `${d}d ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`;
   }
-  function getCountdown(start_time?: string | null) {
+  // คำนวณเวลานับถอยหลังและสี
+  function getCountdown(start_time?: string | null, status?: string | null) {
     const start = parseLocalDate(start_time);
     if (!start) return { text: "-", color: "gray" as const };
     const diff = start.getTime() - now;
-    if (diff <= 0) return { text: "time out", color: "red" as const };
+    if (diff <= 0 || status === "canceled" || status === "closed")
+      return { text: "time out", color: "red" as const };
     const color =
       diff <= 5 * 60 * 1000
         ? ("warning" as const)
@@ -139,6 +144,7 @@ export default function RaidroomsDetail() {
     return { text: formatDuration(diff), color };
   }
 
+  // ดึงรายละเอียดห้อง
   async function fetchDetail() {
     if (!id) {
       setError("ไม่พบรหัสห้อง");
@@ -172,12 +178,13 @@ export default function RaidroomsDetail() {
     }
   }
 
+  // เรียกใช้ตอนโหลดหน้าและเมื่อ id เปลี่ยน
   useEffect(() => {
     fetchDetail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const cd = getCountdown(room?.start_time);
+  const cd = getCountdown(room?.start_time, room?.status);
   const isFull = room && memberTotal >= (room.max_members ?? 0);
   const capacityPct =
     room && room.max_members > 0
@@ -191,6 +198,7 @@ export default function RaidroomsDetail() {
     "closed",
     "canceled",
   ];
+  // สถานะที่แสดงใน Select
   const STATUS_LABELS: Record<string, string> = {
     invited: "Invited",
     active: "Active",
@@ -202,11 +210,14 @@ export default function RaidroomsDetail() {
   const [savingStatus, setSavingStatus] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
 
+  const [alertUser, setAlertUser] = useState<string | null>(null);
+
   // ตั้งค่า statusDraft ตามค่าจากห้องเมื่อโหลดสำเร็จ
   useEffect(() => {
     if (room?.status) setStatusDraft(room.status);
   }, [room?.status]);
 
+  // ฟังก์ชันบันทึกสถานะ
   async function handleSaveStatus() {
     if (!room || !statusDraft || statusDraft === room.status) return;
 
@@ -250,6 +261,7 @@ export default function RaidroomsDetail() {
     }
   }
 
+  // ฟังก์ชันลบห้อง
   async function deleteRoom(id: number) {
     try {
       setLoading(true);
@@ -272,14 +284,14 @@ export default function RaidroomsDetail() {
         throw new Error(body.message || `Server returned ${res.status}`);
       }
 
-    // ✅ ข้อความที่จะส่งกลับไปแสดงที่หน้ารายการ
-    const msgText = body.message || "ลบห้องเรียบร้อยแล้ว";
+      // ✅ ข้อความที่จะส่งกลับไปแสดงที่หน้ารายการ
+      const msgText = body.message || "ลบห้องเรียบร้อยแล้ว";
 
-    // ✅ กลับไปหน้ารายการ พร้อม state สำหรับแสดง Alert
-    navigate("/admin/raidrooms", {
-      replace: true,                     // กันผู้ใช้กด Back แล้วเจอหน้า detail ที่ถูกลบ
-      state: { alert: "success", msg: msgText },
-    });
+      // ✅ กลับไปหน้ารายการ พร้อม state สำหรับแสดง Alert
+      navigate("/admin/raidrooms", {
+        replace: true, // กันผู้ใช้กด Back แล้วเจอหน้า detail ที่ถูกลบ
+        state: { alert: "success", msg: msgText },
+      });
     } catch (e) {
       setError(getErrorMessage(e) || "เกิดข้อผิดพลาดในการลบ");
     } finally {
@@ -287,19 +299,69 @@ export default function RaidroomsDetail() {
     }
   }
 
+  // ฟังก์ชันเตะสมาชิก
+  async function kickMember(userId: number) {
+    if (!room) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const API_BASE = import.meta.env.VITE_API_BASE;
+      const token = localStorage.getItem("auth_token");
+      const res = await fetch(`${API_BASE}/api/admin/rooms/kick_member.php`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify({ room_id: room.id, user_id: userId }),
+      });
+      const body = await res.json();
+      if (!res.ok || body.success === false) {
+        throw new Error(body.message || `Server returned ${res.status}`);
+      }
+      // รีเฟรชข้อมูลห้อง
+      await fetchDetail();
+      // แสดงข้อความเตะสมาชิก
+      setAlertUser(body.message || "เตะสมาชิกเรียบร้อยแล้ว");
+      // เคลียร์ข้อความสำเร็จอัตโนมัติ
+      setTimeout(() => setAlertUser(null), 2500);
+    } catch (e) {
+      setAlertUser(getErrorMessage(e) || "เกิดข้อผิดพลาดในการเตะสมาชิก");
+    } finally {
+      setLoading(false);
+      setKickUserId(null);
+      setShowKickModal(false);
+    }
+  }
+
+  // ฟังก์ชันเปิด/ปิด modal ลบห้อง
   const handleOpenDelete = (id: number) => {
     setDeleteId(id);
     setShowDeleteModal(true);
   };
 
+  // ฟังก์ชันเปิด/ปิด modal เตะสมาชิก
   const handleCloseDelete = () => {
     setShowDeleteModal(false);
     setDeleteId(null);
   };
 
+  // ฟังก์ชันยืนยันการลบห้อง
   const handleConfirmDelete = async (id: number) => {
     await deleteRoom(id);
     handleCloseDelete();
+  };
+
+  // ฟังก์ชันเปิด/ปิด modal เตะสมาชิก
+  const handleOpenKick = (userId: number) => {
+    setKickUserId(userId);
+    setShowKickModal(true);
+  };
+
+  // ฟังก์ชันปิด modal เตะสมาชิก
+  const handleCloseKick = () => {
+    setShowKickModal(false);
+    setKickUserId(null);
   };
 
   return (
@@ -495,32 +557,57 @@ export default function RaidroomsDetail() {
                         <Badge color={m.role === "owner" ? "purple" : "gray"}>
                           {m.role}
                         </Badge>
-                        <Badge color={ready ? "success" : "gray"}>
-                          {ready ? "เพิ่มเพื่อนแล้ว" : "ยังไม่เพิ่มเพื่อน"}
-                        </Badge>
+                        {m.role === "owner" ? (
+                          <Badge color="blue">เจ้าของห้อง</Badge>
+                        ) : (
+                          <Badge color={ready ? "success" : "gray"}>
+                            {ready ? "เพิ่มเพื่อนแล้ว" : "ยังไม่เพิ่มเพื่อน"}
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    {m.friend_ready_at && (
-                      <div className="text-xs text-gray-500">
-                        เวลาเพิ่มเพื่อน: {formatDate(m.friend_ready_at)}
-                      </div>
-                    )}
+                    <div className="flex flex-row items-center gap-2 justify-between">
+                      {m.friend_ready_at && (
+                        <div className="text-xs text-gray-500">
+                          เวลาเพิ่มเพื่อน: {formatDate(m.friend_ready_at)}
+                        </div>
+                      )}
+
+                      {m.role !== "owner" && (
+                        <div className="text-right">
+                          <Button
+                            size="xs"
+                            color="red"
+                            onClick={() => handleOpenKick(m.user_id)}
+                          >
+                            {" "}
+                            เตะสมาชิก
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
+
+            {alertUser && (
+              <div className="p-3">
+                <AlertComponent type="success" message={alertUser} />
+              </div>
+            )}
 
             {/* Desktop table */}
             <div className="hidden overflow-x-auto md:block">
               <Table className="w-full table-auto text-sm">
                 <TableHead>
                   <TableRow>
-                    <TableHeadCell>User</TableHeadCell>
-                    <TableHeadCell>Role</TableHeadCell>
-                    <TableHeadCell>Friend Status</TableHeadCell>
-                    <TableHeadCell>Joined At</TableHeadCell>
+                    <TableHeadCell>ผู้ใช้งาน</TableHeadCell>
+                    <TableHeadCell>ระดับ</TableHeadCell>
+                    <TableHeadCell>สถานะ เพิ่มเพื่อน</TableHeadCell>
+                    <TableHeadCell>เข้าร่วมเมื่อ</TableHeadCell>
                     <TableHeadCell className="hidden lg:table-cell">
-                      Friend Ready At
+                      เพิ่มเพื่อนเมื่อ
                     </TableHeadCell>
                   </TableRow>
                 </TableHead>
@@ -564,17 +651,36 @@ export default function RaidroomsDetail() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge color={ready ? "success" : "gray"}>
-                            {ready ? "เพิ่มเพื่อนแล้ว" : "ยังไม่เพิ่มเพื่อน"}
-                          </Badge>
+                          {m.role === "owner" ? (
+                            <Badge color="blue">เจ้าของห้อง</Badge>
+                          ) : (
+                            <Badge color={ready ? "success" : "gray"}>
+                              {ready ? "เพิ่มเพื่อนแล้ว" : "ยังไม่เพิ่มเพื่อน"}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {formatDate(m.joined_at)}
                         </TableCell>
                         <TableCell className="hidden whitespace-nowrap lg:table-cell">
-                          {m.friend_ready_at
-                            ? formatDate(m.friend_ready_at)
-                            : "-"}
+                          <div className="flex flex-row items-center gap-3">
+                            <div>
+                              {m.friend_ready_at
+                                ? formatDate(m.friend_ready_at)
+                                : "-"}
+                            </div>
+                            <div>
+                              {m.role !== "owner" && (
+                                <Button
+                                  size="xs"
+                                  color="red"
+                                  onClick={() => handleOpenKick(m.user_id)}
+                                >
+                                  เตะ
+                                </Button>
+                              )}
+                            </div>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -773,6 +879,17 @@ export default function RaidroomsDetail() {
           id={deleteId ?? undefined}
           onConfirm={handleConfirmDelete}
           onClose={handleCloseDelete}
+        />
+      )}
+
+      {/* Modal ยืนยันลบ */}
+      {showKickModal && (
+        <ModalComponent
+          header="ยืนยันการเตะสมาชิก"
+          msg="คุณต้องการเตะสมาชิกท่านนี้หรือไม่?"
+          id={kickUserId ?? undefined}
+          onConfirm={kickMember}
+          onClose={handleCloseKick}
         />
       )}
     </div>

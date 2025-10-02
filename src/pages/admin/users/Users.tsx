@@ -44,10 +44,20 @@ type RawUser = {
 
 /* ---------- Avatar helper (ตัวอักษรแรก + สีคงที่) ---------- */
 const AVATAR_COLORS = [
-  "bg-rose-500","bg-orange-500","bg-amber-500","bg-lime-500",
-  "bg-emerald-500","bg-teal-500","bg-cyan-500","bg-sky-500",
-  "bg-blue-500","bg-indigo-500","bg-violet-500","bg-purple-500",
-  "bg-fuchsia-500","bg-pink-500",
+  "bg-rose-500",
+  "bg-orange-500",
+  "bg-amber-500",
+  "bg-lime-500",
+  "bg-emerald-500",
+  "bg-teal-500",
+  "bg-cyan-500",
+  "bg-sky-500",
+  "bg-blue-500",
+  "bg-indigo-500",
+  "bg-violet-500",
+  "bg-purple-500",
+  "bg-fuchsia-500",
+  "bg-pink-500",
 ];
 
 function hashString(s: string): number {
@@ -80,11 +90,11 @@ function UserAvatar({
       />
     );
   }
-  const key = (name?.toLowerCase() || `user_${id ?? 0}`);
+  const key = name?.toLowerCase() || `user_${id ?? 0}`;
   const color = AVATAR_COLORS[hashString(key) % AVATAR_COLORS.length];
   return (
     <div
-      className={`${sizeCls} rounded-full ${color} flex items-center justify-center font-semibold uppercase text-white ring-1 ring-black/10`}
+      className={`${sizeCls} rounded-full ${color} flex items-center justify-center font-semibold text-white uppercase ring-1 ring-black/10`}
       title={name || (id ? `User #${id}` : "user")}
     >
       {getInitial(name, id)}
@@ -230,7 +240,7 @@ export default function Users() {
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              ผู้ใช้งาน
+              ผู้ใช้งาน (Users)
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               จัดการบัญชีผู้ใช้ แก้ไข/ลบ และค้นหาผู้ใช้
@@ -272,7 +282,10 @@ export default function Users() {
               </select>
             </div>
 
-            <Button onClick={() => navigate("/admin/users/add")} className="sm:ml-2">
+            <Button
+              onClick={() => navigate("/admin/users/add")}
+              className="sm:ml-2"
+            >
               สร้างผู้ใช้ใหม่
             </Button>
           </div>
@@ -307,15 +320,24 @@ export default function Users() {
               <div className="p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <UserAvatar src={u.avatar || undefined} name={u.username} id={u.id} size={10} />
+                    <UserAvatar
+                      src={u.avatar || undefined}
+                      name={u.username}
+                      id={u.id}
+                      size={10}
+                    />
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-gray-900 dark:text-white">
                         {u.username ?? "-"}
                       </div>
-                      <div className="truncate text-xs text-gray-500">{u.email}</div>
+                      <div className="truncate text-xs text-gray-500">
+                        {u.email}
+                      </div>
                     </div>
                   </div>
-                  <Badge color={u.status === "active" ? "success" : "red"}>{u.status}</Badge>
+                  <Badge color={u.status === "active" ? "success" : "red"}>
+                    {u.status}
+                  </Badge>
                 </div>
 
                 <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300">
@@ -326,16 +348,21 @@ export default function Users() {
                     <span className="text-gray-500">Level:</span> {u.level}
                   </div>
                   <div className="col-span-2">
-                    <span className="text-gray-500">Created:</span> {formatDate(u.created_at)}
+                    <span className="text-gray-500">Created:</span>{" "}
+                    {formatDate(u.created_at)}
                   </div>
                 </div>
 
                 <div className="mt-3">
                   <Dropdown label="เลือก" size="xs" dismissOnClick={true}>
-                    <DropdownItem onClick={() => navigate(`/admin/users/edit/${u.id}`)}>
+                    <DropdownItem
+                      onClick={() => navigate(`/admin/users/edit/${u.id}`)}
+                    >
                       แก้ไข
                     </DropdownItem>
-                    <DropdownItem onClick={() => navigate(`/admin/users/detail/${u.id}`)}>
+                    <DropdownItem
+                      onClick={() => navigate(`/admin/users/detail/${u.id}`)}
+                    >
                       ดูรายละเอียด
                     </DropdownItem>
                     <DropdownDivider />
@@ -368,7 +395,10 @@ export default function Users() {
               <TableBody className="divide-y">
                 {users.length === 0 && !loading && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-gray-500">
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-gray-500"
+                    >
                       ไม่พบผู้ใช้
                     </TableCell>
                   </TableRow>
@@ -381,7 +411,11 @@ export default function Users() {
                   >
                     <TableCell>
                       <div className="flex min-w-0 items-center gap-2">
-                        <UserAvatar src={u.avatar || undefined} name={u.username} id={u.id} />
+                        <UserAvatar
+                          src={u.avatar || undefined}
+                          name={u.username}
+                          id={u.id}
+                        />
                         <span className="truncate">{u.username}</span>
                       </div>
                     </TableCell>
@@ -389,17 +423,33 @@ export default function Users() {
                     <TableCell className="truncate">{u.role}</TableCell>
                     <TableCell>{u.level}</TableCell>
                     <TableCell>
-                      <Badge size="sm" color={u.status === "active" ? "success" : "red"}>
+                      <Badge
+                        size="sm"
+                        color={u.status === "active" ? "success" : "red"}
+                      >
                         {u.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">{formatDate(u.created_at)}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {formatDate(u.created_at)}
+                    </TableCell>
                     <TableCell className="text-right">
-                      <Dropdown label="เลือก" size="xs" dismissOnClick={true} inline>
-                        <DropdownItem onClick={() => navigate(`/admin/users/detail/${u.id}`)}>
+                      <Dropdown
+                        label="เลือก"
+                        size="xs"
+                        dismissOnClick={true}
+                        inline
+                      >
+                        <DropdownItem
+                          onClick={() =>
+                            navigate(`/admin/users/detail/${u.id}`)
+                          }
+                        >
                           ดูรายละเอียด
                         </DropdownItem>
-                        <DropdownItem onClick={() => navigate(`/admin/users/edit/${u.id}`)}>
+                        <DropdownItem
+                          onClick={() => navigate(`/admin/users/edit/${u.id}`)}
+                        >
                           แก้ไข
                         </DropdownItem>
                         <DropdownDivider />

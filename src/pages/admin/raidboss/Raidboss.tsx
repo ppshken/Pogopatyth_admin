@@ -242,7 +242,7 @@ export default function RaidBosses() {
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              บอส
+              บอส (Raid Boss)
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               จัดการข้อมูล Raid Boss พร้อมสถานะตามช่วงเวลาเริ่ม/สิ้นสุด

@@ -313,9 +313,6 @@ export default function AddRaidboss() {
                       onChange={(e) => handleChange("pokemon_id", e.target.value)}
                       required
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      ต้องเป็นตัวเลข เช่น 150 (Mewtwo), 384 (Rayquaza)
-                    </p>
                   </div>
 
                   <div>
@@ -377,9 +374,6 @@ export default function AddRaidboss() {
                     />
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-gray-500">
-                  ถ้าไม่ระบุเวลา ระบบจะตั้งเป็น 00:00:00 ของวันที่เลือก
-                </p>
               </div>
             </div>
           </div>
@@ -481,25 +475,6 @@ export default function AddRaidboss() {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Actions (duplicate for mobile ergonomics) */}
-                <div className="mt-4 flex gap-2 md:hidden">
-                  <Button
-                    color="gray"
-                    className="flex-1"
-                    onClick={() => navigate("/admin/raidboss")}
-                  >
-                    ยกเลิก
-                  </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={handleSubmit}
-                    disabled={submitting}
-                  >
-                    {submitting && <Spinner size="sm" className="mr-2" />}
-                    บันทึก
-                  </Button>
                 </div>
               </div>
             </div>

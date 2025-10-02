@@ -228,7 +228,7 @@ export default function EditRaidboss() {
         </div>
       )}
 
-      <div className="max-w-xl space-y-4">
+      <div className="max-w-xl space-y-4 dark:text-white">
         <div>
           <Label>Pokemon ID</Label>
           <TextInput

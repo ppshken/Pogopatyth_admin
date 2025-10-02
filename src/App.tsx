@@ -62,13 +62,11 @@ export default function App() {
 
             {/* Raidrooms Management */}
             <Route path="raidrooms" element={<Raidrooms />} />
-            <Route path="raidrooms/add" element={<Raidrooms />} />
-            <Route path="raidrooms/raidroomsdetail/:id" element={<RaidroomsDetail />} />
+            <Route path="raidrooms/detail/:id" element={<RaidroomsDetail />} />
 
             {/* Notifications Management */}
             <Route path="notifications" element={<Notifications />} />
             <Route path="notifications/add" element={<AddNotifications />} />
-            <Route path="raidrooms/notificatinosdetail/:id" element={<RaidroomsDetail />} />
 
             {/* Report Management */}
             <Route path="reports" element={<Reports />} />

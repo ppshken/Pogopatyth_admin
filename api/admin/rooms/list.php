@@ -92,6 +92,7 @@ try {
                 r.created_at,
                 u.id AS owner_id, 
                 u.username AS owner_name,
+                u.avatar AS owner_avatar,
                 COUNT(DISTINCT ur.user_id) AS member_total
             FROM raid_rooms r
             JOIN users u ON r.owner_id = u.id

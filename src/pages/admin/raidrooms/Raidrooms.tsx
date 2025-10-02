@@ -24,6 +24,7 @@ type RaidRoom = {
   boss: string;
   pokemon_image: string | null;
   owner_name: string | null;
+  owner_avatar: string | null;
   max_members: number;
   status: string;
   start_time: string;
@@ -39,6 +40,7 @@ export default function Raidrooms() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [show, setShow] = useState(false);
@@ -48,13 +50,19 @@ export default function Raidrooms() {
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  const [filterBoss, setFilterBoss] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+
   const navigate = useNavigate();
   const location = useLocation();
   const alert = location.state?.alert;
   const msg = location.state?.msg;
 
+  const [allBosses, setAllBosses] = useState<string[]>([]);
+
   // อัปเดตเวลาปัจจุบันทุก 1 วินาที
   const [now, setNow] = useState(() => Date.now());
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
@@ -79,11 +87,12 @@ export default function Raidrooms() {
     return d > 0 ? `${d}d ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`;
   };
 
-  const getCountdown = (start_time: string) => {
+  const getCountdown = (start_time: string, status: string) => {
     const start = parseDateSafe(start_time);
     if (!start) return { text: "-", color: "gray" as const };
     const diff = start.getTime() - now;
-    if (diff <= 0) return { text: "time out", color: "red" as const };
+    if (diff <= 0 || status === "canceled" || status === "closed")
+      return { text: "time out", color: "red" as const };
     const color =
       diff <= 5 * 60 * 1000
         ? ("warning" as const)
@@ -101,9 +110,11 @@ export default function Raidrooms() {
       const API_BASE = import.meta.env.VITE_API_BASE;
       const token = localStorage.getItem("auth_token");
 
-      const url = `${API_BASE}/api/admin/rooms/list.php?page=${page}&limit=${limit}&search=${encodeURIComponent(
+      let url = `${API_BASE}/api/admin/rooms/list.php?page=${page}&limit=${limit}&search=${encodeURIComponent(
         search,
       )}`;
+      if (filterBoss) url += `&boss=${encodeURIComponent(filterBoss)}`;
+      if (filterStatus) url += `&status=${encodeURIComponent(filterStatus)}`;
       const res = await fetch(url, {
         method: "GET",
         headers: {
@@ -125,6 +136,7 @@ export default function Raidrooms() {
         boss: r.boss ?? "-",
         pokemon_image: r.pokemon_image ?? null,
         owner_name: r.owner_name ?? "-",
+        owner_avatar: r.owner_avatar ?? null,
         max_members: Number(r.max_members) || 0,
         status: r.status ?? "-",
         start_time: r.start_time ?? "-",
@@ -133,7 +145,24 @@ export default function Raidrooms() {
       }));
 
       setRooms(normalized);
+      setTotalItems(body.pagination.total);
       setTotalPages(Math.max(1, Number(body.pagination?.total_pages) || 1));
+
+      // collect boss options and keep a persistent set so filters don't disappear
+      try {
+        const bosses = Array.from(
+          new Set(items.map((i: any) => i.boss).filter(Boolean)),
+        );
+        if (bosses.length > 0) {
+          setAllBosses((prev) => {
+            const set = new Set<string>(prev);
+            for (const b of bosses) set.add(String(b));
+            return Array.from(set);
+          });
+        }
+      } catch (e) {
+        // ignore
+      }
     } catch (err) {
       setError(getErrorMessage(err) || "เกิดข้อผิดพลาด");
     } finally {
@@ -191,8 +220,8 @@ export default function Raidrooms() {
 
   useEffect(() => {
     fetchRooms();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, filterBoss, filterStatus]);
 
   useEffect(() => {
     if (alert && msg) {
@@ -220,7 +249,7 @@ export default function Raidrooms() {
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              ห้องตีบอส
+              ห้องตีบอส (Raid Rooms)
             </h3>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
               จัดการห้องพร้อมนับเวลาถอยหลัง และสถานะล่าสุด
@@ -265,6 +294,7 @@ export default function Raidrooms() {
           </div>
         </div>
 
+        {/* Success & Error */}
         {successMsg && show && (
           <div className="mb-4">
             <AlertComponent message={successMsg} type="success" />
@@ -275,6 +305,71 @@ export default function Raidrooms() {
             <AlertComponent message={error} type="failure" />
           </div>
         )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="my-6 text-center text-gray-500">กำลังโหลด...</div>
+        )}
+
+        {/* ฟิลเตอร์ข้อมูล */}
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {/* ฟิลเตอร์บอส */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600 dark:text-gray-300">
+                บอส:
+              </label>
+              <select
+                className="rounded-lg border px-2 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                value={filterBoss}
+                onChange={(e) => setFilterBoss(e.target.value)}
+              >
+                <option value="">ทั้งหมด</option>
+                {allBosses.map((boss) => (
+                  <option key={boss} value={boss}>
+                    {boss}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* ฟิลเตอร์สถานะ */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600 dark:text-gray-300">
+                สถานะ:
+              </label>
+              <select
+                className="rounded-lg border p-2 px-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="">ทั้งหมด</option>
+                <option value="active">active</option>
+                <option value="invited">invited</option>
+                <option value="canceled">canceled</option>
+                <option value="closed">closed</option>
+              </select>
+            </div>
+            {/* ปุ่มรีเซ็ตฟิลเตอร์ */}
+            <div>
+              <Button
+                onClick={() => {
+                  setPage(1);
+                  setFilterBoss("");
+                  setFilterStatus("");
+                  fetchRooms();
+                }}
+                size="sm"
+                className="ml-2"
+              >
+                รีเซ็ต
+              </Button>
+            </div>
+          </div>
+          {/* จำนวนทั้งหมด */}
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            จำนวนทั้งหมด {totalItems} รายการ
+          </div>
+        </div>
 
         {/* Mobile cards */}
         <div className="space-y-3 md:hidden">
@@ -295,7 +390,11 @@ export default function Raidrooms() {
                   <div className="min-w-0 font-semibold text-gray-900 dark:text-white">
                     <span className="truncate">{r.boss}</span>
                   </div>
-                  <Badge color={r.member_total === r.max_members ? "success" : "info"}>
+                  <Badge
+                    color={
+                      r.member_total === r.max_members ? "success" : "info"
+                    }
+                  >
                     {r.member_total}/{r.max_members}
                   </Badge>
                 </div>
@@ -330,7 +429,11 @@ export default function Raidrooms() {
 
                 <div className="mt-3">
                   <Dropdown label="ตัวเลือก" size="xs" dismissOnClick={true}>
-                    <DropdownItem onClick={() => navigate(`/admin/raidrooms/raidroomsdetail/${r.id}`)}>
+                    <DropdownItem
+                      onClick={() =>
+                        navigate(`/admin/raidrooms/detail/${r.id}`)
+                      }
+                    >
                       ดูข้อมูล
                     </DropdownItem>
                     <DropdownDivider />
@@ -350,28 +453,33 @@ export default function Raidrooms() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[24%]">บอส</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">หัวห้อง</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">บอส</TableHeadCell>
+                  <TableHeadCell className="w-[20%]">หัวห้อง</TableHeadCell>
                   <TableHeadCell className="w-[12%]">จำนวนสมาชิก</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">สถานะห้อง</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">สถานะห้อง</TableHeadCell>
                   <TableHeadCell className="w-[16%]">เวลาเริ่ม</TableHeadCell>
                   <TableHeadCell className="w-[12%]">นับถอยหลัง</TableHeadCell>
                   <TableHeadCell className="w-[16%]">สร้างเมื่อ</TableHeadCell>
-                  <TableHeadCell className="w-[8%] text-right">จัดการ</TableHeadCell>
+                  <TableHeadCell className="w-[8%] text-right">
+                    จัดการ
+                  </TableHeadCell>
                 </TableRow>
               </TableHead>
 
               <TableBody className="divide-y">
                 {rooms.length === 0 && !loading && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center text-gray-500">
+                    <TableCell
+                      colSpan={8}
+                      className="py-8 text-center text-gray-500"
+                    >
                       ไม่พบห้อง
                     </TableCell>
                   </TableRow>
                 )}
 
                 {rooms.map((r) => {
-                  const cd = getCountdown(r.start_time);
+                  const cd = getCountdown(r.start_time, r.status);
                   return (
                     <TableRow
                       key={r.id}
@@ -392,16 +500,33 @@ export default function Raidrooms() {
                         </div>
                       </TableCell>
 
-                      <TableCell className="truncate">{r.owner_name ?? "-"}</TableCell>
+                      <TableCell className="truncate">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <img
+                            className="h-6 w-6 flex-shrink-0 rounded-full object-cover ring-1 ring-gray-200"
+                            src={r.owner_avatar || undefined}
+                          />
+                          <span className="truncate">{r.owner_name}</span>
+                        </div>
+                      </TableCell>
 
                       <TableCell>
-                        <Badge color={r.member_total === r.max_members ? "success" : "info"}>
+                        <Badge
+                          color={
+                            r.member_total === r.max_members
+                              ? "success"
+                              : "info"
+                          }
+                        >
                           {r.member_total} / {r.max_members}
                         </Badge>
                       </TableCell>
 
                       <TableCell>
-                        <Badge size="sm" color={statusColor[r.status] ?? "gray"}>
+                        <Badge
+                          size="sm"
+                          color={statusColor[r.status] ?? "gray"}
+                        >
                           {r.status}
                         </Badge>
                       </TableCell>
@@ -421,8 +546,17 @@ export default function Raidrooms() {
                       </TableCell>
 
                       <TableCell className="text-right">
-                        <Dropdown label="เลือก" size="xs" dismissOnClick={true} inline>
-                          <DropdownItem onClick={() => navigate(`/admin/raidrooms/raidroomsdetail/${r.id}`)}>
+                        <Dropdown
+                          label="เลือก"
+                          size="xs"
+                          dismissOnClick={true}
+                          inline
+                        >
+                          <DropdownItem
+                            onClick={() =>
+                              navigate(`/admin/raidrooms/detail/${r.id}`)
+                            }
+                          >
                             ดูข้อมูล
                           </DropdownItem>
                           <DropdownDivider />

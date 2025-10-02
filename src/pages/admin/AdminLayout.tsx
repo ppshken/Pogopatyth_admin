@@ -4,14 +4,14 @@ import { Button } from "flowbite-react";
 import { DarkThemeToggle } from "flowbite-react";
 
 //icon
-import { 
-  IoAppsOutline, 
+import {
+  IoAppsOutline,
   IoPeopleOutline,
   IoPawOutline,
   IoInvertMode,
   IoNotificationsOutline,
-  IoWarningOutline
- } from "react-icons/io5";
+  IoWarningOutline,
+} from "react-icons/io5";
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
@@ -52,17 +52,26 @@ export default function AdminLayout() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex">
         {/* Sidebar - mobile: slide-in, desktop: static */}
-          <aside
-            className={
-              "fixed inset-y-0 left-0 z-30 w-64 transform border-r border-gray-200 bg-white p-4 transition-transform dark:border-gray-700 dark:bg-gray-800 " +
-              (open ? "translate-x-0" : "-translate-x-full") +
-              " lg:fixed lg:translate-x-0 lg:h-screen lg:block lg:z-40 overflow-y-auto"
-            }
-            aria-hidden={!open}
-          >
-          <div className="mb-6 flex items-center justify-between">
-            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              PogopartyTH
+        <aside
+          className={
+            "fixed inset-y-0 left-0 z-30 w-64 transform border-r border-gray-200 bg-white p-4 transition-transform dark:border-gray-700 dark:bg-gray-800 " +
+            (open ? "translate-x-0" : "-translate-x-full") +
+            " overflow-y-auto lg:fixed lg:z-40 lg:block lg:h-screen lg:translate-x-0"
+          }
+          aria-hidden={!open}
+        >
+          <div className="mb-6 flex items-center gap-3 justify-between">
+            <div className="flex items-center gap-2">
+              <div>
+                <img
+                  src="assets/pogopartyth.png"
+                  alt="Logo"
+                  className="h-8 w-8 rounded-md"
+                />
+              </div>
+              <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                PogopartyTH
+              </div>
             </div>
             <button
               className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-sm lg:hidden dark:bg-gray-700"
@@ -85,7 +94,7 @@ export default function AdminLayout() {
               }
             >
               <IoAppsOutline />
-              Dashboard
+              แดชบอร์ด
             </NavLink>
 
             <NavLink
@@ -99,9 +108,8 @@ export default function AdminLayout() {
               }
             >
               <IoPeopleOutline />
-              Users
+              ผู้ใช้งาน
             </NavLink>
-
 
             <NavLink
               to="/admin/raidboss"
@@ -114,7 +122,7 @@ export default function AdminLayout() {
               }
             >
               <IoPawOutline />
-              Raidboss
+              บอส
             </NavLink>
 
             <NavLink
@@ -128,7 +136,7 @@ export default function AdminLayout() {
               }
             >
               <IoInvertMode />
-              Raidrooms
+              ห้องตีบอส
             </NavLink>
 
             <NavLink
@@ -142,7 +150,7 @@ export default function AdminLayout() {
               }
             >
               <IoNotificationsOutline />
-              Notifications
+              แจ้งเตือน
             </NavLink>
 
             <NavLink
@@ -156,9 +164,8 @@ export default function AdminLayout() {
               }
             >
               <IoWarningOutline />
-              Reports
+              รายงาน
             </NavLink>
-
           </nav>
           <div className="absolute right-4 bottom-4">
             <DarkThemeToggle />
