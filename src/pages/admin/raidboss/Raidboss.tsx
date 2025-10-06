@@ -27,7 +27,7 @@ type RaidBoss = {
   pokemon_image?: string | null;
   pokemon_tier: string | number;
   start_date?: string | null; // "YYYY-MM-DD HH:mm:ss"
-  end_date?: string | null;   // "YYYY-MM-DD HH:mm:ss"
+  end_date?: string | null; // "YYYY-MM-DD HH:mm:ss"
   created_at?: string | null;
 };
 
@@ -51,10 +51,20 @@ function isActiveByNow(
 
 /* ---------- Avatar fallback (ตัวอักษรแรก + สีคงที่) ---------- */
 const AVATAR_COLORS = [
-  "bg-rose-500","bg-orange-500","bg-amber-500","bg-lime-500",
-  "bg-emerald-500","bg-teal-500","bg-cyan-500","bg-sky-500",
-  "bg-blue-500","bg-indigo-500","bg-violet-500","bg-purple-500",
-  "bg-fuchsia-500","bg-pink-500",
+  "bg-rose-500",
+  "bg-orange-500",
+  "bg-amber-500",
+  "bg-lime-500",
+  "bg-emerald-500",
+  "bg-teal-500",
+  "bg-cyan-500",
+  "bg-sky-500",
+  "bg-blue-500",
+  "bg-indigo-500",
+  "bg-violet-500",
+  "bg-purple-500",
+  "bg-fuchsia-500",
+  "bg-pink-500",
 ];
 function hashString(s: string): number {
   let h = 0;
@@ -86,11 +96,11 @@ function MonAvatar({
       />
     );
   }
-  const key = (name?.toLowerCase() || `mon_${id ?? 0}`);
+  const key = name?.toLowerCase() || `mon_${id ?? 0}`;
   const color = AVATAR_COLORS[hashString(key) % AVATAR_COLORS.length];
   return (
     <div
-      className={`${sizeCls} ${color} rounded-full flex items-center justify-center font-semibold uppercase text-white ring-1 ring-black/10`}
+      className={`${sizeCls} ${color} flex items-center justify-center rounded-full font-semibold text-white uppercase ring-1 ring-black/10`}
       title={name || (id ? `#${id}` : "pokemon")}
     >
       {getInitial(name, id)}
@@ -113,6 +123,16 @@ export default function RaidBosses() {
   const [show, setShow] = useState(false);
 
   const [search, setSearch] = useState("");
+
+  // External API fetch states
+  const [externalUrl, setExternalUrl] = useState(
+    "https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/raids.json",
+  );
+  const [extLoading, setExtLoading] = useState(false);
+  const [extError, setExtError] = useState<string | null>(null);
+  const [extMons, setExtMons] = useState<any[]>([]);
+  const [importStart, setImportStart] = useState<string>("");
+  const [importEnd, setImportEnd] = useState<string>("");
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -285,9 +305,130 @@ export default function RaidBosses() {
               </select>
             </div>
 
-            <Button onClick={() => navigate("/admin/raidboss/add")} className="sm:ml-2">
-              สร้างบอสใหม่
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => navigate("/admin/raidboss/add")}
+                className="sm:ml-2"
+              >
+                สร้างบอสใหม่
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Import from external API */}
+        <div className="mb-4 rounded-lg border border-dashed border-gray-300 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <input
+              type="text"
+              value={externalUrl}
+              onChange={(e) => setExternalUrl(e.target.value)}
+              placeholder="URL ของ API (ตัวอย่าง JSON)"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+            />
+
+            <div className="flex items-center gap-2">
+              <input
+                type="datetime-local"
+                value={importStart}
+                onChange={(e) => setImportStart(e.target.value)}
+                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                title="Start date/time for imported raids"
+              />
+              <input
+                type="datetime-local"
+                value={importEnd}
+                onChange={(e) => setImportEnd(e.target.value)}
+                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                title="End date/time for imported raids"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                color="gray"
+                onClick={async () => {
+                  if (!externalUrl) return setExtError("กรุณาใส่ URL ของ API");
+                  setExtLoading(true);
+                  setExtError(null);
+                  setExtMons([]);
+                  try {
+                    const res = await fetch(externalUrl, { cache: "no-store" });
+                    if (!res.ok) throw new Error(`API returned ${res.status}`);
+                    const data = await res.json();
+                    if (!Array.isArray(data))
+                      throw new Error("รูปแบบข้อมูลต้องเป็นอาเรย์");
+                    const mapped = data.map((it: any, idx: number) => ({
+                      name: it.name ?? it.pokemon_name ?? `#${idx}`,
+                      tier: it.tier ?? it.pokemon_tier ?? "-",
+                      image: it.image ?? it.pokemon_image ?? null,
+                      types: Array.isArray(it.types) ? it.types : [],
+                      raw: it,
+                    }));
+                    setExtMons(mapped);
+                  } catch (e: any) {
+                    setExtError(
+                      typeof e === "string"
+                        ? e
+                        : (e?.message ?? "เกิดข้อผิดพลาดในการเรียก API"),
+                    );
+                  } finally {
+                    setExtLoading(false);
+                  }
+                }}
+              >
+                {extLoading ? "กำลังดึง..." : "ดูตัวอย่าง"}
+              </Button>
+
+              <Button
+                color="primary"
+                onClick={async () => {
+                  if (extMons.length === 0)
+                    return setExtError("ยังไม่มีข้อมูลสำหรับนำเข้า");
+                  setExtLoading(true);
+                  setExtError(null);
+                  try {
+                    const API_BASE = import.meta.env.VITE_API_BASE;
+                    const token = localStorage.getItem("auth_token") || "";
+                    const res = await fetch(
+                      `${API_BASE}/api/admin/raidboss/import_from_url.php`,
+                      {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: token ? `Bearer ${token}` : "",
+                        },
+                        body: JSON.stringify({
+                          url:
+                            externalUrl ||
+                            "https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/raids.json",
+                          start_date: importStart || null,
+                          end_date: importEnd || null,
+                        }),
+                      },
+                    );
+                    const body = await res.json();
+                    if (!res.ok || body.success === false)
+                      throw new Error(body.message || `Server ${res.status}`);
+                    // show result counts if provided
+                    const inserted = Number(body.inserted ?? 0);
+                    const skipped = Math.max(0, extMons.length - inserted);
+                    setSuccessMsg(
+                      `${body.message || "นำเข้าข้อมูลสำเร็จ"} — เพิ่ม: ${inserted} / ข้าม: ${skipped}`,
+                    );
+                    setShow(true);
+                    setTimeout(() => setShow(false), 4000);
+                    fetchBosses();
+                  } catch (e: any) {
+                    setExtError(e?.message ?? "นำเข้าไม่สำเร็จ");
+                  } finally {
+                    setExtLoading(false);
+                  }
+                }}
+              >
+                นำเข้าทั้งหมด
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -300,6 +441,41 @@ export default function RaidBosses() {
         {error && (
           <div className="mb-4">
             <AlertComponent message={error} type="failure" />
+          </div>
+        )}
+
+        {/* External API preview */}
+        {extError && (
+          <div className="mb-4">
+            <AlertComponent message={extError} type="failure" />
+          </div>
+        )}
+        {extMons.length > 0 && (
+          <div className="mb-4 rounded-lg border bg-white p-3 text-sm dark:bg-gray-800">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="font-medium">
+                ตัวอย่างข้อมูลจาก API ({extMons.length})
+              </div>
+              <div className="text-xs text-gray-500">
+                (ยังไม่ได้บันทึกลงระบบ)
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {extMons.map((m, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 rounded border p-2"
+                >
+                  <MonAvatar src={m.image || undefined} name={m.name} id={i} />
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{m.name}</div>
+                    <div className="text-xs text-gray-500">
+                      {String(m.tier)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -322,10 +498,18 @@ export default function RaidBosses() {
                 <div className="p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex min-w-0 items-center gap-3">
-                      <MonAvatar src={b.pokemon_image} name={b.pokemon_name} id={b.pokemon_id} size={10} />
+                      <MonAvatar
+                        src={b.pokemon_image}
+                        name={b.pokemon_name}
+                        id={b.pokemon_id}
+                        size={10}
+                      />
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-gray-900 dark:text-white">
-                          {b.pokemon_name} <span className="text-xs text-gray-500">#{b.pokemon_id}</span>
+                          {b.pokemon_name}{" "}
+                          <span className="text-xs text-gray-500">
+                            #{b.pokemon_id}
+                          </span>
                         </div>
                         <div className="mt-0.5 flex items-center gap-2 text-xs">
                           <Badge size="sm">{String(b.pokemon_tier)}</Badge>
@@ -339,19 +523,30 @@ export default function RaidBosses() {
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300">
                     <div>
-                      เริ่ม: <span className="font-medium">{formatDate(b.start_date)}</span>
+                      เริ่ม:{" "}
+                      <span className="font-medium">
+                        {formatDate(b.start_date)}
+                      </span>
                     </div>
                     <div>
-                      สิ้นสุด: <span className="font-medium">{formatDate(b.end_date)}</span>
+                      สิ้นสุด:{" "}
+                      <span className="font-medium">
+                        {formatDate(b.end_date)}
+                      </span>
                     </div>
                     <div className="col-span-2">
-                      สร้างเมื่อ: <span className="font-medium">{formatDate(b.created_at)}</span>
+                      สร้างเมื่อ:{" "}
+                      <span className="font-medium">
+                        {formatDate(b.created_at)}
+                      </span>
                     </div>
                   </div>
 
                   <div className="mt-3">
                     <Dropdown label="เลือก" size="xs" dismissOnClick>
-                      <DropdownItem onClick={() => navigate(`/admin/raidboss/edit/${b.id}`)}>
+                      <DropdownItem
+                        onClick={() => navigate(`/admin/raidboss/edit/${b.id}`)}
+                      >
                         แก้ไข
                       </DropdownItem>
                       <DropdownDivider />
@@ -374,8 +569,12 @@ export default function RaidBosses() {
                 <TableRow>
                   <TableHeadCell className="w-[28%]">โปเกม่อน</TableHeadCell>
                   <TableHeadCell className="w-[10%]">ระดับ</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">วันที่เริ่มต้น</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">วันที่สิ้นสุด</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">
+                    วันที่เริ่มต้น
+                  </TableHeadCell>
+                  <TableHeadCell className="w-[16%]">
+                    วันที่สิ้นสุด
+                  </TableHeadCell>
                   <TableHeadCell className="w-[12%]">สถานะ</TableHeadCell>
                   <TableHeadCell className="w-[14%]">สร้างเมื่อ</TableHeadCell>
                   <TableHeadCell className="w-[8%]">จัดการ</TableHeadCell>
@@ -385,7 +584,10 @@ export default function RaidBosses() {
               <TableBody className="divide-y">
                 {bosses.length === 0 && !loading && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-8 text-center text-gray-500">
+                    <TableCell
+                      colSpan={7}
+                      className="py-8 text-center text-gray-500"
+                    >
                       ไม่พบบอส
                     </TableCell>
                   </TableRow>
@@ -400,17 +602,29 @@ export default function RaidBosses() {
                     >
                       <TableCell>
                         <div className="flex min-w-0 items-center gap-2">
-                          <MonAvatar src={b.pokemon_image} name={b.pokemon_name} id={b.pokemon_id} />
+                          <MonAvatar
+                            src={b.pokemon_image}
+                            name={b.pokemon_name}
+                            id={b.pokemon_id}
+                          />
                           <div className="min-w-0">
-                            <div className="truncate font-medium">{b.pokemon_name}</div>
-                            <div className="truncate text-xs text-gray-500">#{b.pokemon_id}</div>
+                            <div className="truncate font-medium">
+                              {b.pokemon_name}
+                            </div>
+                            <div className="truncate text-xs text-gray-500">
+                              #{b.pokemon_id}
+                            </div>
                           </div>
                         </div>
                       </TableCell>
 
                       <TableCell>{String(b.pokemon_tier)}</TableCell>
-                      <TableCell className="whitespace-nowrap">{formatDate(b.start_date)}</TableCell>
-                      <TableCell className="whitespace-nowrap">{formatDate(b.end_date)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(b.start_date)}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(b.end_date)}
+                      </TableCell>
 
                       <TableCell>
                         <Badge size="sm" color={active ? "success" : "gray"}>
@@ -424,7 +638,11 @@ export default function RaidBosses() {
 
                       <TableCell className="text-right">
                         <Dropdown label="เลือก" size="xs" dismissOnClick inline>
-                          <DropdownItem onClick={() => navigate(`/admin/raidboss/edit/${b.id}`)}>
+                          <DropdownItem
+                            onClick={() =>
+                              navigate(`/admin/raidboss/edit/${b.id}`)
+                            }
+                          >
                             แก้ไข
                           </DropdownItem>
                           <DropdownDivider />
