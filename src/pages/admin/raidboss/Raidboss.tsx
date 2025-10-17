@@ -12,6 +12,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownDivider,
+  TextInput,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { ModalComponent } from "../../../component/modal";
@@ -319,34 +320,34 @@ export default function RaidBosses() {
         {/* Import from external API */}
         <div className="mb-4 rounded-lg border border-dashed border-gray-300 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            <input
+            <TextInput
               type="text"
               value={externalUrl}
               onChange={(e) => setExternalUrl(e.target.value)}
               placeholder="URL ของ API (ตัวอย่าง JSON)"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              className="w-full rounded-lg border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
             />
 
             <div className="flex items-center gap-2">
-              <input
-                type="datetime-local"
+              <TextInput
+                type="date"
                 value={importStart}
                 onChange={(e) => setImportStart(e.target.value)}
-                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                className="rounded-lg px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                 title="Start date/time for imported raids"
               />
-              <input
-                type="datetime-local"
+              <TextInput
+                type="date"
                 value={importEnd}
                 onChange={(e) => setImportEnd(e.target.value)}
-                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                className="rounded-lg px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                 title="End date/time for imported raids"
               />
             </div>
 
             <div className="flex items-center gap-2">
               <Button
-                color="gray"
+                color="yellow"
                 onClick={async () => {
                   if (!externalUrl) return setExtError("กรุณาใส่ URL ของ API");
                   setExtLoading(true);
@@ -377,11 +378,11 @@ export default function RaidBosses() {
                   }
                 }}
               >
-                {extLoading ? "กำลังดึง..." : "ดูตัวอย่าง"}
+                {extLoading ? "กำลังดึง..." : "ตัวอย่าง"}
               </Button>
 
               <Button
-                color="primary"
+                color="green"
                 onClick={async () => {
                   if (extMons.length === 0)
                     return setExtError("ยังไม่มีข้อมูลสำหรับนำเข้า");
@@ -426,7 +427,7 @@ export default function RaidBosses() {
                   }
                 }}
               >
-                นำเข้าทั้งหมด
+                นำเข้า
               </Button>
             </div>
           </div>
@@ -451,7 +452,7 @@ export default function RaidBosses() {
           </div>
         )}
         {extMons.length > 0 && (
-          <div className="mb-4 rounded-lg border bg-white p-3 text-sm dark:bg-gray-800">
+          <div className="mb-4 rounded-lg bg-white p-3 text-sm dark:bg-gray-800 dark:text-gray-100 border border-gray-200">
             <div className="mb-2 flex items-center justify-between">
               <div className="font-medium">
                 ตัวอย่างข้อมูลจาก API ({extMons.length})
@@ -464,7 +465,7 @@ export default function RaidBosses() {
               {extMons.map((m, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 rounded border p-2"
+                  className="flex items-center gap-2 border border-gray-300 rounded p-2"
                 >
                   <MonAvatar src={m.image || undefined} name={m.name} id={i} />
                   <div className="min-w-0">
