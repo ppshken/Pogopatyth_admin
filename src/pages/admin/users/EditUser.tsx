@@ -12,6 +12,13 @@ export default function EditUser() {
   const [friendCode, setFriendCode] = useState("");
   const [status, setStatus] = useState("");
   const [level, setLevel] = useState<number | "">("");
+  const [team, setTeam] = useState("");
+  const [device_token, setDevice_token] = useState("");
+  const [notistatus, setNotiStatus] = useState("");
+  const [googlesub, setGooglesub] = useState("");
+  const [plan, setPlan] = useState("");
+  const [planexpire, setPlanexpire] = useState("");
+  const [premiumsince, setPremiumsince] = useState("");
   const [loading, setLoading] = useState(false);
   const [alertshow, setAlertshow] = useState(false);
   const [alertmessage, setAlertmessage] = useState("");
@@ -45,7 +52,14 @@ export default function EditUser() {
       setUsername(u.username ?? "");
       setFriendCode(u.friend_code ?? "");
       setLevel(Number(u.level) || "");
-      setStatus(u.status);
+      setStatus(u.status ?? "banned");
+      setTeam(u.team || "");
+      setDevice_token(u.device_token || "");
+      setNotiStatus(u.noti_status || "");
+      setGooglesub(u.google_sub || "");
+      setPlan(u.plan || "");
+      setPlanexpire(String(u.plan_expires_at) || "");
+      setPremiumsince(u.premium_since || "");
     } catch (err) {
       console.error(getErrorMessage(err.message));
       setAlertmessage(getErrorMessage(err.message));
@@ -167,13 +181,88 @@ export default function EditUser() {
         </div>
 
         <div>
+          <Label>Team</Label>
+          <Select
+            id="status"
+            value={team}
+            onChange={(e) => setTeam(e.target.value)}
+          >
+            <option value="Valor">Valor</option>
+            <option value="Instinct">Instinct</option>
+            <option value="Mystic">Mystic</option>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Device Token</Label>
+          <TextInput
+            type="text"
+            value={device_token}
+            onChange={(e) => setDevice_token(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label>Noti Status</Label>
+          <Select
+            id="status"
+            value={notistatus}
+            onChange={(e) => setNotiStatus(e.target.value)}
+          >
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Google Sub</Label>
+          <TextInput
+            type="text"
+            value={googlesub}
+            onChange={(e) => setGooglesub(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label>Plan</Label>
+          <Select
+            id="status"
+            value={plan}
+            onChange={(e) => setPlan(e.target.value)}
+          >
+            <option value="free">Free</option>
+            <option value="premium">Premium</option>
+          </Select>
+        </div>
+
+        <div>
+          <Label>Plan Expire At</Label>
+          <TextInput
+            type="datetime-local"
+            value={planexpire}
+            onChange={(e) => setPlanexpire(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Label>Premium Since</Label>
+          <TextInput
+            type="datetime-local"
+            value={premiumsince}
+            onChange={(e) => setPremiumsince(e.target.value)}
+          />
+        </div>
+
+        <div>
           <Label>Status</Label>
           <Select
             id="status"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
+            
             <option value="active">Active</option>
+            <option value="inactive">InActive</option>
             <option value="banned">Banned</option>
           </Select>
         </div>

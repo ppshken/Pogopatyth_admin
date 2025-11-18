@@ -46,7 +46,7 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT id, email, username, friend_code, level, status, created_at FROM users WHERE id = :id");
+    $stmt = $pdo->prepare("SELECT id, email, username, friend_code, level, team, device_token, noti_status, google_sub, plan, plan_expires_at, premium_since, status, created_at FROM users WHERE id = :id");
     $stmt->execute([":id" => $user_id]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
