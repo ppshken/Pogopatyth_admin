@@ -55,6 +55,10 @@ try {
                     r.boss,
                     r.start_time,
                     r.max_members,
+                    r.min_level,
+                    r.vip_only,
+                    r.lock_room,
+                    r.password_room,
                     r.status,
                     r.owner_id,
                     r.note,
@@ -120,13 +124,50 @@ try {
     $stmtReviews->execute([$roomId]);
     $reviews = $stmtReviews->fetchAll(PDO::FETCH_ASSOC);
 
+    // ✅ ดึง raid_rooms_log
+    $sqlLogs = "SELECT
+                    rrl.id,
+                    rrl.room_id,
+                    rrl.user_id,
+                    rrl.type,
+                    rrl.target,
+                    rrl.description,
+                    rrl.created_at,
+                    u.username
+                FROM raid_rooms_log rrl
+                LEFT JOIN users u ON rrl.user_id = u.id
+                WHERE rrl.room_id = ?
+                ORDER BY rrl.created_at DESC";
+    $stmtLogs = $pdo->prepare($sqlLogs);
+    $stmtLogs->execute([$roomId]);
+    $logs = $stmtLogs->fetchAll(PDO::FETCH_ASSOC);
+
+    // ✅ ดึง chat
+    $sqlChat = "SELECT
+                    c.id,
+                    c.raid_rooms_id,
+                    c.sender,
+                    c.message,
+                    c.created_at,
+                    u.username,
+                    u.avatar
+                FROM chat c
+                LEFT JOIN users u ON c.sender = u.id
+                WHERE c.raid_rooms_id = ?
+                ORDER BY c.created_at ASC";
+    $stmtChat = $pdo->prepare($sqlChat);
+    $stmtChat->execute([$roomId]);
+    $chat = $stmtChat->fetchAll(PDO::FETCH_ASSOC);
+
     echo json_encode([
         "success" => true,
         "data" => [
             "room" => $room,
             "members" => $members,
             "member_total" => $member_total,
-            "reviews" => $reviews,               // 👈 เพิ่มที่นี่
+            "reviews" => $reviews,
+            "logs" => $logs,
+            "chat" => $chat,
         ]
     ]);
 

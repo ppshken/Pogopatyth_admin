@@ -49,9 +49,15 @@ try {
     $pokemon_tier = intval($data['pokemon_tier'] ?? 0);
     $start_date = trim($data['start_date'] ?? "");
     $end_date = trim($data['end_date'] ?? "");
+    $type = trim($data['type'] ?? "");
+    $cp_normal_min = isset($data['cp_normal_min']) ? intval($data['cp_normal_min']) : null;
+    $cp_normal_max = isset($data['cp_normal_max']) ? intval($data['cp_normal_max']) : null;
+    $cp_boost_min = isset($data['cp_boost_min']) ? intval($data['cp_boost_min']) : null;
+    $cp_boost_max = isset($data['cp_boost_max']) ? intval($data['cp_boost_max']) : null;
+    $special = isset($data['special']) ? boolval($data['special']) : false;
 
-    if (!$pokemon_id || !$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date || !$end_date) {
-        throw new Exception("กรอก email, username และ password");
+    if (!$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date || !$end_date) {
+        throw new Exception("กรุณากรอก ข้อมูลให้ครบถ้วน");
     }
 
     // ✅ ตรวจสอบว่า pokemon_id มีอยู่แล้วหรือไม่
@@ -63,8 +69,8 @@ try {
         throw new Exception("pokemon_id นี้ ถูกเพิ่มแล้ว");
     }
 
-    $stmt = $pdo->prepare("INSERT INTO `raid_boss`(`pokemon_id`, `pokemon_name`, `pokemon_image`, `pokemon_tier`, `start_date`, `end_date`) 
-    VALUES (:pokemon_id, :pokemon_name, :pokemon_image, :pokemon_tier, :start_date, :end_date)");
+    $stmt = $pdo->prepare("INSERT INTO `raid_boss`(`pokemon_id`, `pokemon_name`, `pokemon_image`, `pokemon_tier`, `start_date`, `end_date`, `type`, `cp_normal_min`, `cp_normal_max`, `cp_boost_min`, `cp_boost_max`, `special`) 
+    VALUES (:pokemon_id, :pokemon_name, :pokemon_image, :pokemon_tier, :start_date, :end_date, :type, :cp_normal_min, :cp_normal_max, :cp_boost_min, :cp_boost_max, :special)");
 
     $stmt->execute([
         ":pokemon_id" => $pokemon_id,
@@ -73,6 +79,12 @@ try {
         ":pokemon_tier" => $pokemon_tier,
         ":start_date" => $start_date,
         ":end_date" => $end_date,
+        ":type" => $type,
+        ":cp_normal_min" => $cp_normal_min,
+        ":cp_normal_max" => $cp_normal_max,
+        ":cp_boost_min" => $cp_boost_min,
+        ":cp_boost_max" => $cp_boost_max,
+        ":special" => $special ? 1 : 0,
     ]);
 
     echo json_encode([

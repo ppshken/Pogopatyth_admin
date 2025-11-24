@@ -45,7 +45,6 @@ try {
     // ✅ Search
     $search = $_GET['search'] ?? '';
     $whereSql = "WHERE 1=1";
-    $whereSql = "WHERE role = 'member'";
     $params = [];
 
     if ($search) {
@@ -55,7 +54,7 @@ try {
     }
 
     // ✅ ดึงข้อมูลผู้ใช้
-    $sql = "SELECT id, email, username, avatar, role, level, status, created_at
+    $sql = "SELECT id, email, username, avatar, role, level, team, status, plan, plan_expires_at, created_at
             FROM users
             $whereSql
             ORDER BY created_at DESC

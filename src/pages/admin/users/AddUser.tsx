@@ -10,7 +10,8 @@ export default function AddUser() {
   const [password, setPassword] = useState("");
   const [friendCode, setFriendCode] = useState("");
   const [level, setLevel] = useState<number | "">("");
-  const [deviceToken, setDeviceToken] = useState("");
+  const [team, setTeam] = useState("Valor");
+  const [device_token, setDevice_token] = useState("");
   const [role, setRole] = useState("member");
   const [status, setStatus] = useState("active");
 
@@ -40,8 +41,9 @@ export default function AddUser() {
           username,
           password,
           friend_code: friendCode,
-          level,
-          device_token: deviceToken,
+          level: level === "" ? 1 : level,
+          team,
+          device_token,
           role,
           status,
         }),
@@ -53,7 +55,10 @@ export default function AddUser() {
       }
 
       navigate("/admin/users", {
-        state: { alert: "success", msg: data.message || "เพิ่มผู้ใช้เรียบร้อย" },
+        state: {
+          alert: "success",
+          msg: data.message || "เพิ่มผู้ใช้เรียบร้อย",
+        },
       });
     } catch (err) {
       setAlertmessage(getErrorMessage(err) || "เกิดข้อผิดพลาด");
@@ -131,9 +136,22 @@ export default function AddUser() {
           <Label>Device Token</Label>
           <TextInput
             type="text"
-            value={deviceToken}
-            onChange={(e) => setDeviceToken(e.target.value)}
+            value={device_token}
+            onChange={(e) => setDevice_token(e.target.value)}
           />
+        </div>
+
+        <div>
+          <Label>Team</Label>
+          <Select
+            id="team"
+            value={team}
+            onChange={(e) => setTeam(e.target.value)}
+          >
+            <option value="Valor">Valor</option>
+            <option value="Instinct">Instinct</option>
+            <option value="Mystic">Mystic</option>
+          </Select>
         </div>
 
         <div>
@@ -148,6 +166,7 @@ export default function AddUser() {
           <Label>Status</Label>
           <Select value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="active">Active</option>
+            <option value="inactive">InActive</option>
             <option value="banned">Banned</option>
           </Select>
         </div>

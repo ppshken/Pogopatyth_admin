@@ -15,9 +15,16 @@ import { getErrorMessage } from "../../../component/functions/getErrorMessage";
 type FormState = {
   pokemon_id: string;
   pokemon_name: string;
+  pokemon_image: string;
   pokemon_tier: string;
-  start_date: string; // input[type=date] -> "YYYY-MM-DD"
-  end_date: string; // input[type=date] -> "YYYY-MM-DD"
+  type: string;
+  special: boolean;
+  cp_normal_min: string;
+  cp_normal_max: string;
+  cp_boost_min: string;
+  cp_boost_max: string;
+  start_date: string;
+  end_date: string;
   imageMode: "url" | "upload";
   pokemon_image_url: string;
   imageFile: File | null;
@@ -30,6 +37,7 @@ type ApiResponse = {
 
 /* ---------- Constants ---------- */
 const tierOptions = ["1", "2", "3", "4", "5", "6"];
+const typeOptions = ["normal", "shadow", "mega", "dynamax", "gigantamax"];
 
 /* ---------- Utils ---------- */
 // "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm" -> "YYYY-MM-DD HH:mm:ss"
@@ -94,12 +102,11 @@ function FallbackAvatar({
 }
 
 export default function AddRaidboss() {
-
   const POKE_BASE =
-  "https://www.pokemon.com/static-assets/content-assets/cms2/img/pokedex/full";
+    "https://www.pokemon.com/static-assets/content-assets/cms2/img/pokedex/full";
 
   const buildPokeUrl = (rawId: string) => {
-    const digits = rawId.replace(/\D/g, "");      // เอาตัวเลขล้วน
+    const digits = rawId.replace(/\D/g, ""); // เอาตัวเลขล้วน
     if (!digits) return "";
     const n = Number(digits);
     const idStr = n < 1000 ? String(n).padStart(3, "0") : String(n); // 001..999, 1000+
@@ -109,7 +116,14 @@ export default function AddRaidboss() {
   const [form, setForm] = useState<FormState>({
     pokemon_id: "",
     pokemon_name: "",
+    pokemon_image: "",
     pokemon_tier: "",
+    type: "",
+    special: false,
+    cp_normal_min: "",
+    cp_normal_max: "",
+    cp_boost_min: "",
+    cp_boost_max: "",
     start_date: "",
     end_date: "",
     imageMode: "url",
@@ -118,7 +132,7 @@ export default function AddRaidboss() {
   });
 
   const handleChange = (name: keyof FormState, value: any) => {
-    setForm(prev => {
+    setForm((prev) => {
       const next = { ...prev, [name]: value };
       if (name === "pokemon_id") {
         next.pokemon_image_url = buildPokeUrl(value);
@@ -164,8 +178,26 @@ export default function AddRaidboss() {
       return "Pokemon ID ต้องเป็นตัวเลข";
     if (!form.pokemon_name.trim()) return "กรุณากรอกชื่อโปเกม่อน";
     if (!form.pokemon_tier.trim()) return "กรุณาเลือก Tier";
+    if (!form.type.trim()) return "กรุณาเลือก Type";
     if (!form.start_date) return "กรุณาเลือกวันเริ่ม";
     if (!form.end_date) return "กรุณาเลือกวันสิ้นสุด";
+
+    if (
+      form.cp_normal_min ||
+      form.cp_normal_max ||
+      form.cp_boost_min ||
+      form.cp_boost_max
+    ) {
+      const cpMin = form.cp_normal_min ? Number(form.cp_normal_min) : 0;
+      const cpMax = form.cp_normal_max ? Number(form.cp_normal_max) : 0;
+      if (cpMin && cpMax && cpMin > cpMax)
+        return "CP Min ต้องไม่มากกว่า CP Max";
+
+      const cpBoostMin = form.cp_boost_min ? Number(form.cp_boost_min) : 0;
+      const cpBoostMax = form.cp_boost_max ? Number(form.cp_boost_max) : 0;
+      if (cpBoostMin && cpBoostMax && cpBoostMin > cpBoostMax)
+        return "CP Boost Min ต้องไม่มากกว่า CP Boost Max";
+    }
 
     const start = new Date(form.start_date).getTime();
     const end = new Date(form.end_date).getTime();
@@ -205,6 +237,12 @@ export default function AddRaidboss() {
         pokemon_id: Number(form.pokemon_id.trim()),
         pokemon_name: form.pokemon_name.trim(),
         pokemon_tier: form.pokemon_tier,
+        type: form.type,
+        special: form.special ? 1 : 0,
+        cp_normal_min: form.cp_normal_min ? Number(form.cp_normal_min) : null,
+        cp_normal_max: form.cp_normal_max ? Number(form.cp_normal_max) : null,
+        cp_boost_min: form.cp_boost_min ? Number(form.cp_boost_min) : null,
+        cp_boost_max: form.cp_boost_max ? Number(form.cp_boost_max) : null,
         start_date: fromInputValue(form.start_date),
         end_date: fromInputValue(form.end_date),
       };
@@ -215,6 +253,16 @@ export default function AddRaidboss() {
         fd.append("pokemon_id", String(common.pokemon_id));
         fd.append("pokemon_name", common.pokemon_name);
         fd.append("pokemon_tier", String(common.pokemon_tier));
+        fd.append("type", String(common.type));
+        if (common.special) fd.append("special", String(common.special));
+        if (common.cp_normal_min)
+          fd.append("cp_normal_min", String(common.cp_normal_min));
+        if (common.cp_normal_max)
+          fd.append("cp_normal_max", String(common.cp_normal_max));
+        if (common.cp_boost_min)
+          fd.append("cp_boost_min", String(common.cp_boost_min));
+        if (common.cp_boost_max)
+          fd.append("cp_boost_max", String(common.cp_boost_max));
         fd.append("start_date", common.start_date);
         fd.append("end_date", common.end_date);
         fd.append("image", form.imageFile);
@@ -295,12 +343,15 @@ export default function AddRaidboss() {
 
         {/* Content */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Left: Basic + Schedule */}
+          {/* Left: Basic Info + Stats */}
           <div className="space-y-4 md:col-span-2">
-            {/* Card: Basic info */}
+            {/* Card: Basic Info */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full" />
+              <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-cyan-500" />
               <div className="p-4">
+                <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
+                  ข้อมูลพื้นฐาน
+                </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="pokemon_id">โปเกม่อนไอดี</Label>
@@ -310,7 +361,9 @@ export default function AddRaidboss() {
                       inputMode="numeric"
                       placeholder="เช่น 384"
                       value={form.pokemon_id}
-                      onChange={(e) => handleChange("pokemon_id", e.target.value)}
+                      onChange={(e) =>
+                        handleChange("pokemon_id", e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -327,7 +380,7 @@ export default function AddRaidboss() {
                   </div>
 
                   <div>
-                    <Label htmlFor="pokemon_tier">เทียร์โปเกม่อน</Label>
+                    <Label htmlFor="pokemon_tier">เทียร์</Label>
                     <Select
                       id="pokemon_tier"
                       value={form.pokemon_tier}
@@ -342,14 +395,106 @@ export default function AddRaidboss() {
                       ))}
                     </Select>
                   </div>
+
+                  <div>
+                    <Label htmlFor="type">Pokemon Type</Label>
+                    <Select
+                      id="type"
+                      value={form.type}
+                      onChange={(e) => change("type", e.target.value)}
+                      required
+                    >
+                      <option value="">เลือก Type</option>
+                      {typeOptions.map((t) => (
+                        <option key={t} value={t}>
+                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="flex items-center gap-3 sm:col-span-2">
+                    <input
+                      id="special"
+                      type="checkbox"
+                      checked={form.special}
+                      onChange={(e) => change("special", e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2"
+                    />
+                    <Label htmlFor="special" className="m-0 cursor-pointer">
+                      Special Form (Shadow, Mega, etc.)
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card: Combat Power Stats */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
+              <div className="h-1 w-full bg-gradient-to-r from-orange-500 to-red-500" />
+              <div className="p-4">
+                <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
+                  CP Stats
+                </h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="cp_normal_min">CP Normal Min</Label>
+                    <TextInput
+                      id="cp_normal_min"
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="เช่น 1500"
+                      value={form.cp_normal_min}
+                      onChange={(e) => change("cp_normal_min", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cp_normal_max">CP Normal Max</Label>
+                    <TextInput
+                      id="cp_normal_max"
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="เช่น 1800"
+                      value={form.cp_normal_max}
+                      onChange={(e) => change("cp_normal_max", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cp_boost_min">CP Boost Min</Label>
+                    <TextInput
+                      id="cp_boost_min"
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="เช่น 1875"
+                      value={form.cp_boost_min}
+                      onChange={(e) => change("cp_boost_min", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="cp_boost_max">CP Boost Max</Label>
+                    <TextInput
+                      id="cp_boost_max"
+                      type="number"
+                      inputMode="numeric"
+                      placeholder="เช่น 2250"
+                      value={form.cp_boost_max}
+                      onChange={(e) => change("cp_boost_max", e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Card: Schedule */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full" />
+              <div className="h-1 w-full bg-gradient-to-r from-purple-500 to-pink-500" />
               <div className="p-4">
+                <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
+                  ช่วงเวลา
+                </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <Label htmlFor="start_date">วันที่เริ่มต้น</Label>
@@ -381,7 +526,7 @@ export default function AddRaidboss() {
           {/* Right: Image */}
           <div className="space-y-4">
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full" />
+              <div className="h-1 w-full bg-gradient-to-r from-teal-500 to-cyan-500" />
               <div className="p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <Button
@@ -473,6 +618,10 @@ export default function AddRaidboss() {
                           {form.pokemon_tier || "-"}
                         </span>
                       </div>
+                      <div>
+                        <span className="text-gray-500">Type:</span>{" "}
+                        <span className="font-medium">{form.type || "-"}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -481,8 +630,7 @@ export default function AddRaidboss() {
 
             {/* Tips */}
             <div className="rounded-lg border border-dashed border-gray-300 p-3 text-xs text-gray-600 dark:border-gray-700 dark:text-gray-300">
-              แนะนำ: ตั้งช่วงวันที่ให้ครอบคลุมการหมุนเวียนบอส
-              และตั้งรูปภาพให้ตรงตามบอสเพื่อให้ผู้ใช้จดจำได้ง่าย
+              แนะนำ: กรอก CP Stats เพื่อให้ผู้ใช้ทราบช่วง CP ของบอส
             </div>
           </div>
         </div>

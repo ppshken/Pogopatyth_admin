@@ -46,8 +46,15 @@ try {
     $pokemon_tier   = intval($input["pokemon_tier"] ?? 0);
     $start_date     = trim($input["start_date"] ?? "");
     $end_date       = trim($input["end_date"] ?? "");
+    $type           = trim($input["type"] ?? "");
+    $cp_normal_min  = isset($input["cp_normal_min"]) ? intval($input["cp_normal_min"]) : null;
+    $cp_normal_max  = isset($input["cp_normal_max"]) ? intval($input["cp_normal_max"]) : null;
+    $cp_boost_min   = isset($input["cp_boost_min"])  ? intval($input["cp_boost_min"])  : null;
+    $cp_boost_max   = isset($input["cp_boost_max"])  ? intval($input["cp_boost_max"])  : null;
+    $special        = isset($input["special"]) ? boolval($input["special"]) : false;
 
-    if (!$id || !$pokemon_id || !$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date  || !$end_date) {
+
+    if (!$id || !$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date  || !$end_date) {
         throw new Exception("กรุณากรอก ข้อมูลให้ครบถ้วน");
     }
 
@@ -58,7 +65,13 @@ try {
                 pokemon_image = :pokemon_image,
                 pokemon_tier = :pokemon_tier,
                 start_date = :start_date,
-                end_date = :end_date
+                end_date = :end_date,
+                type = :type,
+                cp_normal_min = :cp_normal_min,
+                cp_normal_max = :cp_normal_max,
+                cp_boost_min = :cp_boost_min,
+                cp_boost_max = :cp_boost_max,
+                special = :special
             WHERE id = :id";
 
     $params = [
@@ -69,6 +82,12 @@ try {
         ":pokemon_tier"  => $pokemon_tier,
         ":start_date"    => $start_date,
         ":end_date"      => $end_date,
+        ":type"          => $type,
+        ":cp_normal_min" => $cp_normal_min,
+        ":cp_normal_max" => $cp_normal_max,
+        ":cp_boost_min"  => $cp_boost_min,
+        ":cp_boost_max"  => $cp_boost_max,
+        ":special"       => $special ? 1 : 0,
     ];
 
     $stmt = $pdo->prepare($sql);

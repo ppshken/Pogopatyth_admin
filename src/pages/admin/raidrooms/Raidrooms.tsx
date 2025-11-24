@@ -26,6 +26,10 @@ type RaidRoom = {
   owner_name: string | null;
   owner_avatar: string | null;
   max_members: number;
+  min_level?: number | string | null;
+  vip_only?: number | boolean | null;
+  lock_room?: number | boolean | null;
+  password_room?: string | null;
   status: string;
   start_time: string;
   member_total: number;
@@ -138,6 +142,10 @@ export default function Raidrooms() {
         owner_name: r.owner_name ?? "-",
         owner_avatar: r.owner_avatar ?? null,
         max_members: Number(r.max_members) || 0,
+        min_level: r.min_level ?? null,
+        vip_only: r.vip_only ?? null,
+        lock_room: r.lock_room ?? null,
+        password_room: r.password_room ?? null,
         status: r.status ?? "-",
         start_time: r.start_time ?? "-",
         member_total: Number(r.member_total) || 0,
@@ -422,6 +430,30 @@ export default function Raidrooms() {
                     <Badge size="sm">{formatDate(r.start_time)}</Badge>
                   </div>
 
+                  {/* Room Details */}
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    {r.min_level && (
+                      <Badge size="sm" color="gray">
+                        Lv. {r.min_level}
+                      </Badge>
+                    )}
+                    {r.vip_only && (
+                      <Badge size="sm" color="purple">
+                        ⭐ VIP Only
+                      </Badge>
+                    )}
+                    {r.lock_room && (
+                      <Badge size="sm" color="red">
+                        🔒 Lock
+                      </Badge>
+                    )}
+                    {r.password_room && (
+                      <Badge size="sm" color="amber">
+                        {r.password_room}
+                      </Badge>
+                    )}
+                  </div>
+
                   <div className="text-xs text-gray-500">
                     สร้างเมื่อ: {formatDate(r.created_at || undefined)}
                   </div>
@@ -453,13 +485,14 @@ export default function Raidrooms() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[16%]">บอส</TableHeadCell>
-                  <TableHeadCell className="w-[20%]">หัวห้อง</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">จำนวนสมาชิก</TableHeadCell>
-                  <TableHeadCell className="w-[10%]">สถานะห้อง</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">เวลาเริ่ม</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">นับถอยหลัง</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">สร้างเมื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[14%]">บอส</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">หัวห้อง</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">จำนวนสมาชิก</TableHeadCell>
+                  <TableHeadCell className="w-[8%]">สถานะ</TableHeadCell>
+                  <TableHeadCell className="w-[14%]">รายละเอียด</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">เวลาเริ่ม</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">นับถอยหลัง</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">สร้างเมื่อ</TableHeadCell>
                   <TableHeadCell className="w-[8%] text-right">
                     จัดการ
                   </TableHeadCell>
@@ -529,6 +562,38 @@ export default function Raidrooms() {
                         >
                           {r.status}
                         </Badge>
+                      </TableCell>
+
+                      {/* Room Details Column */}
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {r.min_level && (
+                            <Badge size="sm" color="blue">
+                              Lv.{r.min_level}
+                            </Badge>
+                          )}
+                          {r.vip_only && (
+                            <Badge size="sm" color="purple">
+                              VIP
+                            </Badge>
+                          )}
+                          {r.lock_room && (
+                            <Badge size="sm" color="yellow">
+                              ส่วนตัว
+                            </Badge>
+                          )}
+                          {r.password_room && (
+                            <Badge size="sm" color="red">
+                              {r.password_room}
+                            </Badge>
+                          )}
+                          {!r.min_level &&
+                            !r.vip_only &&
+                            !r.lock_room &&
+                            !r.password_room && (
+                              <span className="text-gray-400">-</span>
+                            )}
+                        </div>
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">

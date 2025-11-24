@@ -11,6 +11,8 @@ import {
   IoInvertMode,
   IoNotificationsOutline,
   IoWarningOutline,
+  IoCalendarOutline,
+  IoSettingsOutline 
 } from "react-icons/io5";
 
 export default function AdminLayout() {
@@ -60,7 +62,7 @@ export default function AdminLayout() {
           }
           aria-hidden={!open}
         >
-          <div className="mb-6 flex items-center gap-3 justify-between">
+          <div className="mb-6 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <div className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 PogopartyTH
@@ -158,6 +160,34 @@ export default function AdminLayout() {
             >
               <IoWarningOutline />
               รายงาน
+            </NavLink>
+
+            <NavLink
+              to="/admin/reports"
+              onClick={() => setOpen(false)}
+              className={({ isActive }: { isActive: boolean }) =>
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium " +
+                (isActive
+                  ? "bg-primary-600 text-white"
+                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
+              }
+            >
+              <IoCalendarOutline  />
+              อีเวนท์
+            </NavLink>
+
+            <NavLink
+              to="/admin/reports"
+              onClick={() => setOpen(false)}
+              className={({ isActive }: { isActive: boolean }) =>
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium " +
+                (isActive
+                  ? "bg-primary-600 text-white"
+                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
+              }
+            >
+              <IoSettingsOutline color="#3B82F6" />
+              ตั้งค่าแอพ
             </NavLink>
           </nav>
           <div className="absolute right-4 bottom-4">

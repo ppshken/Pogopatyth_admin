@@ -27,8 +27,14 @@ type RaidBoss = {
   pokemon_name: string;
   pokemon_image?: string | null;
   pokemon_tier: string | number;
-  start_date?: string | null; // "YYYY-MM-DD HH:mm:ss"
-  end_date?: string | null; // "YYYY-MM-DD HH:mm:ss"
+  type?: string | null;
+  special?: boolean;
+  cp_normal_min?: number | null;
+  cp_normal_max?: number | null;
+  cp_boost_min?: number | null;
+  cp_boost_max?: number | null;
+  start_date?: string | null;
+  end_date?: string | null;
   created_at?: string | null;
 };
 
@@ -177,6 +183,12 @@ export default function RaidBosses() {
         pokemon_name: b.pokemon_name ?? "-",
         pokemon_image: b.pokemon_image ?? null,
         pokemon_tier: b.pokemon_tier ?? "-",
+        type: b.type ?? null,
+        special: b.special ?? null,
+        cp_normal_min: b.cp_normal_min ?? null,
+        cp_normal_max: b.cp_normal_max ?? null,
+        cp_boost_min: b.cp_boost_min ?? null,
+        cp_boost_max: b.cp_boost_max ?? null,
         start_date: b.start_date ?? null,
         end_date: b.end_date ?? null,
         created_at: b.created_at ?? null,
@@ -452,7 +464,7 @@ export default function RaidBosses() {
           </div>
         )}
         {extMons.length > 0 && (
-          <div className="mb-4 rounded-lg bg-white p-3 text-sm dark:bg-gray-800 dark:text-gray-100 border border-gray-200">
+          <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3 text-sm dark:bg-gray-800 dark:text-gray-100">
             <div className="mb-2 flex items-center justify-between">
               <div className="font-medium">
                 ตัวอย่างข้อมูลจาก API ({extMons.length})
@@ -465,7 +477,7 @@ export default function RaidBosses() {
               {extMons.map((m, i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-2 border border-gray-300 rounded p-2"
+                  className="flex items-center gap-2 rounded border border-gray-300 p-2"
                 >
                   <MonAvatar src={m.image || undefined} name={m.name} id={i} />
                   <div className="min-w-0">
@@ -517,6 +529,16 @@ export default function RaidBosses() {
                           <Badge size="sm" color={active ? "success" : "gray"}>
                             {active ? "ใช้งาน" : "ไม่ใช้งาน"}
                           </Badge>
+                          {b.type && (
+                            <Badge size="sm" color="indigo">
+                              {b.type}
+                            </Badge>
+                          )}
+                          {b.special && (
+                            <Badge size="sm" color="purple">
+                              {b.special}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -568,16 +590,17 @@ export default function RaidBosses() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[28%]">โปเกม่อน</TableHeadCell>
-                  <TableHeadCell className="w-[10%]">ระดับ</TableHeadCell>
-                  <TableHeadCell className="w-[16%]">
+                  <TableHeadCell className="w-[22%]">โปเกม่อน</TableHeadCell>
+                  <TableHeadCell className="w-[8%]">ระดับ</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">Type</TableHeadCell>
+                  <TableHeadCell className="w-[14%]">
                     วันที่เริ่มต้น
                   </TableHeadCell>
-                  <TableHeadCell className="w-[16%]">
+                  <TableHeadCell className="w-[14%]">
                     วันที่สิ้นสุด
                   </TableHeadCell>
-                  <TableHeadCell className="w-[12%]">สถานะ</TableHeadCell>
-                  <TableHeadCell className="w-[14%]">สร้างเมื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">สถานะ</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">สร้างเมื่อ</TableHeadCell>
                   <TableHeadCell className="w-[8%]">จัดการ</TableHeadCell>
                 </TableRow>
               </TableHead>
@@ -596,6 +619,18 @@ export default function RaidBosses() {
 
                 {bosses.map((b) => {
                   const active = isActiveByNow(b.start_date, b.end_date);
+                  const colortype =
+                    b.type === "normal"
+                      ? "gray"
+                      : b.type === "mega"
+                        ? "pink"
+                        : b.type === "gigantamax"
+                          ? "red"
+                          : b.type === "dynamax"
+                            ? "red"
+                            : b.type === "shadow"
+                              ? "purple"
+                              : "indigo";
                   return (
                     <TableRow
                       key={b.id}
@@ -620,6 +655,27 @@ export default function RaidBosses() {
                       </TableCell>
 
                       <TableCell>{String(b.pokemon_tier)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {b.type && (
+                            <div className="flex flex-wrap gap-1">
+                              {b.type && (
+                                <Badge size="sm" color={colortype}>
+                                  {b.type}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-1">
+                            <Badge
+                              size="sm"
+                              color={b.special ? "green" : "gray"}
+                            >
+                              {b.special ? "Special" : "-"}
+                            </Badge>
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {formatDate(b.start_date)}
                       </TableCell>

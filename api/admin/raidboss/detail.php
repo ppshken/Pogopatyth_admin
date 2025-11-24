@@ -46,7 +46,21 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT id, pokemon_id, pokemon_name, pokemon_image, pokemon_tier, start_date, end_date, created_at FROM raid_boss WHERE id = :id");
+    $stmt = $pdo->prepare("SELECT id,
+    pokemon_id,
+    pokemon_name,
+    pokemon_image,
+    pokemon_tier,
+    start_date,
+    end_date,
+    type,
+    special,
+    cp_normal_min,
+    cp_normal_max,
+    cp_boost_min,
+    cp_boost_max,
+    created_at
+    FROM raid_boss WHERE id = :id");
     $stmt->execute([":id" => $raid_boss_id]);
     $raidboss = $stmt->fetch(PDO::FETCH_ASSOC);
 

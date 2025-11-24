@@ -73,6 +73,12 @@ try {
                 pokemon_tier,
                 start_date,
                 end_date,
+                type,
+                cp_normal_min,
+                cp_normal_max,
+                cp_boost_min,
+                cp_boost_max,
+                special,
                 created_at
             FROM raid_boss
             $whereSql

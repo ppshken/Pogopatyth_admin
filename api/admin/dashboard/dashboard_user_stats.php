@@ -48,7 +48,7 @@ try {
 
   // 1) ผู้สร้างห้องมากสุด (ตาม owner_id)
   $sqlCreators = "
-    SELECT rr.owner_id AS user_id, u.username,
+    SELECT rr.owner_id AS user_id, u.username, u.avatar,
            COUNT(*) AS rooms_created
     FROM raid_rooms rr
     JOIN users u ON u.id = rr.owner_id
@@ -63,7 +63,7 @@ try {
 
   // 2) ผู้เข้าร่วมห้องมากสุด (นับจากตารางสมาชิก)
   $sqlJoiners = "
-    SELECT m.user_id, u.username,
+    SELECT m.user_id, u.username, u.avatar,
            COUNT(*) AS rooms_joined
     FROM user_raid_rooms m
     JOIN users u ON u.id = m.user_id
@@ -78,7 +78,7 @@ try {
 
   // 3) โฮสต์ที่ได้คะแนนเฉลี่ยรีวิวสูงสุด (นับรีวิวที่ให้กับห้องของเขา)
   $sqlHostRatings = "
-    SELECT rr.owner_id AS user_id, u.username,
+    SELECT rr.owner_id AS user_id, u.username, u.avatar,
            COUNT(r.id) AS reviews, AVG(r.rating) AS avg_rating
     FROM raid_reviews r
     JOIN raid_rooms rr ON rr.id = r.room_id
@@ -99,16 +99,19 @@ try {
       "range" => ["start"=>$start, "end"=>$end],
       "top_creators" => array_map(fn($r)=>[
         "user_id" => (int)$r["user_id"],
+        "avatar" => $r["avatar"],
         "username"=> $r["username"],
         "rooms_created" => (int)$r["rooms_created"]
       ], $top_creators),
       "top_joiners" => array_map(fn($r)=>[
         "user_id" => (int)$r["user_id"],
+        "avatar" => $r["avatar"],
         "username"=> $r["username"],
         "rooms_joined" => (int)$r["rooms_joined"]
       ], $top_joiners),
       "top_host_ratings" => array_map(fn($r)=>[
         "user_id" => (int)$r["user_id"],
+        "avatar" => $r["avatar"],
         "username"=> $r["username"],
         "reviews" => (int)$r["reviews"],
         "avg_rating" => round((float)$r["avg_rating"], 2)

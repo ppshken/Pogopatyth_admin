@@ -45,7 +45,14 @@ try {
     $password   = $input["password"] ?? null;
     $friendCode = trim($input["friend_code"] ?? "");
     $level      = intval($input["level"] ?? 0);
-    $status   = trim($input["status"] ?? "");
+    $team       = trim($input["team"] ?? "");
+    $device_token = trim($input["device_token"] ?? "");
+    $status     = trim($input["status"] ?? "");
+    $noti_status = trim($input["noti_status"] ?? "");
+    $google_sub = trim($input["google_sub"] ?? "");
+    $plan       = trim($input["plan"] ?? "");
+    $plan_expires_at = $input["plan_expires_at"] ?? null;
+    $premium_since = $input["premium_since"] ?? null;
 
     if (!$email || !$username) {
         throw new Exception("กรุณากรอก email และ username");
@@ -53,14 +60,21 @@ try {
 
     // build query
     $sql = "UPDATE users 
-            SET email = :email, username = :username, friend_code = :friend_code, level = :level, status = :status";
+            SET email = :email, username = :username, friend_code = :friend_code, level = :level, team = :team, device_token = :device_token, status = :status, noti_status = :noti_status, google_sub = :google_sub, plan = :plan, plan_expires_at = :plan_expires_at, premium_since = :premium_since";
     $params = [
         ":email"       => $email,
         ":username"    => $username,
         ":friend_code" => $friendCode,
         ":level"       => $level,
+        ":team"        => $team,
+        ":device_token" => $device_token,
         ":id"          => $id,
         ":status"      => $status,
+        ":noti_status" => $noti_status,
+        ":google_sub"  => $google_sub,
+        ":plan"        => $plan,
+        ":plan_expires_at" => $plan_expires_at ? $plan_expires_at : null,
+        ":premium_since" => $premium_since ? $premium_since : null,
     ];
 
     if (!empty($password)) {

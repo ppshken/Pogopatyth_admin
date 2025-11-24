@@ -92,8 +92,15 @@ export default function EditUser() {
           username: username,
           password: password || undefined, // ส่งเฉพาะถ้าเปลี่ยน
           friend_code: friendCode,
-          level,
-          status,
+          level: level === "" ? 1 : level,
+          team: team,
+          device_token: device_token,
+          status: status,
+          noti_status: notistatus,
+          google_sub: googlesub,
+          plan: plan,
+          plan_expires_at: planexpire,
+          premium_since: premiumsince,
         }),
       });
 
@@ -228,20 +235,17 @@ export default function EditUser() {
           <Select
             id="status"
             value={plan}
-            onChange={(e) => setPlan(e.target.value)}
+            onChange={(e) => {
+              setPlan(e.target.value);
+              if (e.target.value === "free") {
+                setPlanexpire("");
+                setPremiumsince("");
+              }
+            }}
           >
             <option value="free">Free</option>
             <option value="premium">Premium</option>
           </Select>
-        </div>
-
-        <div>
-          <Label>Plan Expire At</Label>
-          <TextInput
-            type="datetime-local"
-            value={planexpire}
-            onChange={(e) => setPlanexpire(e.target.value)}
-          />
         </div>
 
         <div>
@@ -254,13 +258,21 @@ export default function EditUser() {
         </div>
 
         <div>
+          <Label>Plan Expire At</Label>
+          <TextInput
+            type="datetime-local"
+            value={planexpire}
+            onChange={(e) => setPlanexpire(e.target.value)}
+          />
+        </div>
+
+        <div>
           <Label>Status</Label>
           <Select
             id="status"
             value={status}
             onChange={(e) => setStatus(e.target.value)}
           >
-            
             <option value="active">Active</option>
             <option value="inactive">InActive</option>
             <option value="banned">Banned</option>

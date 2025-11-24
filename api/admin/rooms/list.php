@@ -86,6 +86,10 @@ try {
                 r.start_time, 
                 r.status, 
                 r.max_members, 
+                r.min_level,
+                r.vip_only,
+                r.lock_room,
+                r.password_room,
                 r.note, 
                 r.avg_rating, 
                 r.review_count, 
@@ -100,7 +104,7 @@ try {
             $whereSql
             GROUP BY 
                 r.id, r.raid_boss_id, r.boss, r.pokemon_image, r.start_time, 
-                r.status, r.max_members, r.note, r.avg_rating, r.review_count, r.created_at,
+                r.status, r.max_members, r.min_level, r.vip_only, r.lock_room, r.password_room, r.note, r.avg_rating, r.review_count, r.created_at,
                 u.id, u.username
             ORDER BY r.created_at DESC
             LIMIT $limit OFFSET $offset";

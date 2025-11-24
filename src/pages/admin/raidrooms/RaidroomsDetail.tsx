@@ -26,6 +26,10 @@ type Room = {
   boss: string;
   start_time: string; // "YYYY-MM-DD HH:mm:ss"
   max_members: number;
+  min_level?: number | string | null;
+  vip_only?: number | boolean | null;
+  lock_room?: number | boolean | null;
+  password_room?: string | null;
   status: "active" | "invited" | "canceled" | "closed" | string;
   owner_id: number;
   note: string | null;
@@ -60,13 +64,36 @@ type RaidReview = {
   avatar?: string | null;
 };
 
+type RaidLog = {
+  id: number;
+  room_id: number;
+  user_id: number;
+  type: string;
+  target: string | null;
+  description: string | null;
+  created_at: string;
+  username?: string;
+};
+
+type Chat = {
+  id: number;
+  raid_rooms_id: number;
+  sender: string;
+  message: string;
+  created_at: string;
+  username?: string;
+  avatar?: string | null;
+};
+
 type DetailResponse = {
   success: boolean;
   data?: {
     room: Room;
     members: Member[];
     member_total: number;
-    reviews?: RaidReview[]; // 👈 เพิ่ม
+    reviews?: RaidReview[];
+    logs?: RaidLog[];
+    chat?: Chat[];
   };
   message?: string;
 };
@@ -84,6 +111,8 @@ export default function RaidroomsDetail() {
   const [error, setError] = useState<string | null>(null);
 
   const [reviews, setReviews] = useState<RaidReview[]>([]);
+  const [logs, setLogs] = useState<RaidLog[]>([]);
+  const [chat, setChat] = useState<Chat[]>([]);
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -144,6 +173,57 @@ export default function RaidroomsDetail() {
     return { text: formatDuration(diff), color };
   }
 
+  // ฟังก์ชันแสดงเวลาแบบ relative (เมื่อสักครู่, 1 นาทีที่แล้ว)
+  function formatRelativeTime(dateStr?: string | null): string {
+    if (!dateStr) return "-";
+    const date = new Date(
+      dateStr.includes("T") ? dateStr : dateStr.replace(" ", "T"),
+    );
+    if (isNaN(date.getTime())) return "-";
+
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    if (diffSec < 60) return "เมื่อสักครู่";
+    if (diffMin < 60) return `${diffMin} นาทีที่แล้ว`;
+    if (diffHour < 24) return `${diffHour} ชั่วโมงที่แล้ว`;
+    if (diffDay < 7) return `${diffDay} วันที่แล้ว`;
+    return formatDate(dateStr);
+  }
+
+  // สีสำหรับ log type
+  const LOG_TYPE_COLORS: Record<
+    string,
+    | "red"
+    | "blue"
+    | "green"
+    | "yellow"
+    | "purple"
+    | "pink"
+    | "indigo"
+    | "cyan"
+    | "orange"
+    | "lime"
+    | "gray"
+  > = {
+    join: "green",
+    leave: "red",
+    kick: "red",
+    invite: "blue",
+    accept: "green",
+    reject: "red",
+    start: "purple",
+    end: "gray",
+    close: "yellow",
+    cancel: "red",
+    update: "indigo",
+    comment: "cyan",
+  };
+
   // ดึงรายละเอียดห้อง
   async function fetchDetail() {
     if (!id) {
@@ -170,6 +250,8 @@ export default function RaidroomsDetail() {
       setMembers(Array.isArray(data.data.members) ? data.data.members : []);
       setMemberTotal(Number(data.data.member_total) || 0);
       setReviews(Array.isArray(data.data.reviews) ? data.data.reviews : []);
+      setLogs(Array.isArray(data.data.logs) ? data.data.logs : []);
+      setChat(Array.isArray(data.data.chat) ? data.data.chat : []);
     } catch (e) {
       setError(getErrorMessage(e) || "โหลดรายละเอียดไม่สำเร็จ");
     } finally {
@@ -508,6 +590,75 @@ export default function RaidroomsDetail() {
             </div>
           </div>
 
+          {/* Room Details card */}
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="border-b border-gray-200 px-5 py-3 dark:border-gray-700">
+              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                รายละเอียดห้อง
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
+              {/* Minimum Level */}
+              <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40">
+                <div className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                  ระดับขั้นต่ำ
+                </div>
+                <div className="flex items-center gap-2">
+                  {room?.min_level ? (
+                    <Badge color="blue">Lv. {room.min_level}</Badge>
+                  ) : (
+                    <Badge color="gray">ไม่มี</Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* VIP Only */}
+              <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40">
+                <div className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                  VIP เท่านั้น
+                </div>
+                <div className="flex items-center gap-2">
+                  {room?.vip_only ? (
+                    <>
+                      <Badge color="purple">✓ VIP เท่านั้น</Badge>
+                    </>
+                  ) : (
+                    <Badge color="gray">ทั้งหมด</Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Lock Room */}
+              <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40">
+                <div className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                  สถานะการล็อก
+                </div>
+                <div className="flex items-center gap-2">
+                  {room?.lock_room ? (
+                    <Badge color="yellow">ส่วนตัว</Badge>
+                  ) : (
+                    <Badge color="gray">ไม่มี</Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Password Room */}
+              <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700/40">
+                <div className="mb-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                  รหัสผ่าน
+                </div>
+                <div className="flex items-center gap-2">
+                  {room?.password_room ? (
+                    <Badge color="red">{room?.password_room}</Badge>
+                  ) : (
+                    <Badge color="gray">ไม่มี</Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Members card */}
           <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
@@ -561,12 +712,12 @@ export default function RaidroomsDetail() {
                           <Badge color="blue">เจ้าของห้อง</Badge>
                         ) : (
                           <Badge color={ready ? "success" : "gray"}>
-                            {ready ? "เพิ่มเพื่อนแล้ว" : "ยังไม่เพิ่มเพื่อน"}
+                            {ready ? "เพิ่มแล้ว" : "ยังไม่เพิ่ม"}
                           </Badge>
                         )}
                       </div>
                     </div>
-                    <div className="flex flex-row items-center gap-2 justify-between">
+                    <div className="flex flex-row items-center justify-between gap-2">
                       {m.friend_ready_at && (
                         <div className="text-xs text-gray-500">
                           เวลาเพิ่มเพื่อน: {formatDate(m.friend_ready_at)}
@@ -655,7 +806,7 @@ export default function RaidroomsDetail() {
                             <Badge color="blue">เจ้าของห้อง</Badge>
                           ) : (
                             <Badge color={ready ? "success" : "gray"}>
-                              {ready ? "เพิ่มเพื่อนแล้ว" : "ยังไม่เพิ่มเพื่อน"}
+                              {ready ? "เพิ่มแล้ว" : "ยังไม่เพิ่ม"}
                             </Badge>
                           )}
                         </TableCell>
@@ -737,6 +888,52 @@ export default function RaidroomsDetail() {
                         {r.comment}
                       </div>
                     )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Chat card */}
+          <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3 dark:border-gray-700">
+              <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                แชท ({chat.length})
+              </div>
+            </div>
+
+            <div className="max-h-96 divide-y divide-gray-200 overflow-y-auto dark:divide-gray-700">
+              {chat.length === 0 && (
+                <div className="px-5 py-6 text-center text-sm text-gray-500">
+                  ยังไม่มีข้อความ
+                </div>
+              )}
+
+              {chat.map((msg) => (
+                <div key={msg.id} className="px-5 py-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    {msg.avatar ? (
+                      <img
+                        src={msg.avatar}
+                        alt={msg.username}
+                        className="h-8 w-8 flex-shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 flex-shrink-0 rounded-full bg-gray-300" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          {msg.username ?? `User #${msg.sender}`}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatRelativeTime(msg.created_at)}
+                        </span>
+                      </div>
+                      <div className="mt-1 break-words text-gray-700 dark:text-gray-200">
+                        {msg.message}
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -860,6 +1057,49 @@ export default function RaidroomsDetail() {
                 </span>
                 <span className="font-medium">{room?.raid_boss_id ?? "-"}</span>
               </div>
+            </div>
+          </div>
+
+          {/* Activity Log card */}
+          <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="border-b border-gray-200 px-5 py-3 text-sm font-semibold text-gray-900 dark:border-gray-700 dark:text-white">
+              บันทึกกิจกรรม ({logs.length})
+            </div>
+
+            <div className="max-h-96 divide-y divide-gray-200 overflow-y-auto dark:divide-gray-700">
+              {logs.length === 0 && (
+                <div className="px-5 py-6 text-center text-xs text-gray-500">
+                  ยังไม่มีบันทึก
+                </div>
+              )}
+
+              {logs.map((log) => (
+                <div key={log.id} className="px-5 py-3 text-xs">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Badge color={LOG_TYPE_COLORS[log.type] || "blue"}>
+                        {log.type}
+                      </Badge>
+                    </div>
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {log.username ?? `User #${log.user_id}`}
+                    </div>
+                    {log.target && (
+                      <div className="text-gray-600 dark:text-gray-300">
+                        Target: {log.target}
+                      </div>
+                    )}
+                    {log.description && (
+                      <div className="text-gray-600 dark:text-gray-300">
+                        {log.description}
+                      </div>
+                    )}
+                    <div className="text-gray-500">
+                      {formatRelativeTime(log.created_at)}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

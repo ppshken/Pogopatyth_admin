@@ -48,6 +48,7 @@ try {
     $password = $data['password'] ?? "";
     $friend_code = trim($data['friend_code'] ?? "");
     $level = intval($data['level'] ?? 1);
+    $team = $data['team'] ?? "Valor";
     $device_token = trim($data['device_token'] ?? "");
     $role = $data['role'] ?? "member";
     $status = $data['status'] ?? "active";
@@ -70,8 +71,8 @@ try {
 
     // ✅ Insert
     $stmt = $pdo->prepare("INSERT INTO users 
-        (email, username, password_hash, friend_code, level, device_token, role, status, created_at) 
-        VALUES (:email, :username, :password_hash, :friend_code, :level, :device_token, :role, :status, NOW())");
+        (email, username, password_hash, friend_code, level, team, device_token, role, status, created_at) 
+        VALUES (:email, :username, :password_hash, :friend_code, :level, :team, :device_token, :role, :status, NOW())");
 
     $stmt->execute([
         ":email" => $email,
@@ -79,6 +80,7 @@ try {
         ":password_hash" => $password_hash,
         ":friend_code" => $friend_code,
         ":level" => $level,
+        ":team" => $team,
         ":device_token" => $device_token,
         ":role" => $role,
         ":status" => $status,

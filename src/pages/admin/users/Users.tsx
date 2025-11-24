@@ -27,7 +27,10 @@ type User = {
   avatar?: string | null;
   role: string;
   level: number;
+  team?: string;
   status: string;
+  plan?: string;
+  plan_expires_at?: string | null;
   created_at?: string | null;
 };
 
@@ -38,7 +41,10 @@ type RawUser = {
   avatar?: string | null;
   role?: string | null;
   level?: number | string | null;
+  team?: string | null;
   status?: string | null;
+  plan?: string | null;
+  plan_expires_at?: string | null;
   created_at?: string | null;
 };
 
@@ -157,7 +163,10 @@ export default function Users() {
         avatar: u.avatar ?? null,
         role: u.role ?? "User",
         level: Number(u.level ?? 0) || 0,
+        team: u.team ?? "-",
         status: String(u.status ?? "inactive"),
+        plan: u.plan ?? "free",
+        plan_expires_at: u.plan_expires_at ?? null,
         created_at: u.created_at ?? null,
       }));
 
@@ -347,9 +356,22 @@ export default function Users() {
                   <div>
                     <span className="text-gray-500">Level:</span> {u.level}
                   </div>
+                  <div>
+                    <span className="text-gray-500">Team:</span> {u.team}
+                  </div>
                   <div className="col-span-2">
-                    <span className="text-gray-500">Created:</span>{" "}
-                    {formatDate(u.created_at)}
+                    {u.plan === "premium" ? (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded bg-gradient-to-r from-yellow-400 to-orange-500 px-2 py-1 text-xs font-bold text-white">
+                          ⭐ VIP
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          หมด: {formatDate(u.plan_expires_at)}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-gray-500">Plan: Free</span>
+                    )}
                   </div>
                 </div>
 
@@ -382,12 +404,12 @@ export default function Users() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[26%]">ชื่อ</TableHeadCell>
-                  <TableHeadCell className="w-[22%]">อีเมลล์</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">ระดับ</TableHeadCell>
-                  <TableHeadCell className="w-[10%]">เลเวล</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">สถานะ</TableHeadCell>
-                  <TableHeadCell className="w-[14%]">สร้างเมื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[14%]">ชื่อ</TableHeadCell>
+                  <TableHeadCell className="w-[16%]">อีเมลล์</TableHeadCell>
+                  <TableHeadCell className="w-[8%]">เลเวล</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">ทีม</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">สถานะ</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">แผน</TableHeadCell>
                   <TableHeadCell className="w-[8%]">จัดการ</TableHeadCell>
                 </TableRow>
               </TableHead>
@@ -396,7 +418,7 @@ export default function Users() {
                 {users.length === 0 && !loading && (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={8}
                       className="py-8 text-center text-gray-500"
                     >
                       ไม่พบผู้ใช้
@@ -420,8 +442,24 @@ export default function Users() {
                       </div>
                     </TableCell>
                     <TableCell className="truncate">{u.email}</TableCell>
-                    <TableCell className="truncate">{u.role}</TableCell>
                     <TableCell>{u.level}</TableCell>
+                    <TableCell>
+                      <span
+                        className="inline-block rounded px-2 py-1 text-xs font-medium text-white"
+                        style={{
+                          backgroundColor:
+                            u.team === "Valor"
+                              ? "#EF4444"
+                              : u.team === "Instinct"
+                                ? "#F59E0B"
+                                : u.team === "Mystic"
+                                  ? "#3B82F6"
+                                  : "#9CA3AF",
+                        }}
+                      >
+                        {u.team}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <Badge
                         size="sm"
@@ -430,8 +468,19 @@ export default function Users() {
                         {u.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {formatDate(u.created_at)}
+                    <TableCell>
+                      {u.plan === "premium" ? (
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="inline-flex items-center gap-1 rounded bg-gradient-to-r from-yellow-400 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-md">
+                            ⭐ VIP
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            หมดอายุ: {formatDate(u.plan_expires_at)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-500">Free</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Dropdown
