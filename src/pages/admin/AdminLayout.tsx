@@ -163,7 +163,7 @@ export default function AdminLayout() {
             </NavLink>
 
             <NavLink
-              to="/admin/reports"
+              to="/admin/events"
               onClick={() => setOpen(false)}
               className={({ isActive }: { isActive: boolean }) =>
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium " +
@@ -177,7 +177,7 @@ export default function AdminLayout() {
             </NavLink>
 
             <NavLink
-              to="/admin/reports"
+              to="/admin/settings"
               onClick={() => setOpen(false)}
               className={({ isActive }: { isActive: boolean }) =>
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium " +
@@ -186,7 +186,7 @@ export default function AdminLayout() {
                   : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
               }
             >
-              <IoSettingsOutline color="#3B82F6" />
+              <IoSettingsOutline />
               ตั้งค่าแอพ
             </NavLink>
           </nav>

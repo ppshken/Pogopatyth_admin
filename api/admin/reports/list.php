@@ -64,6 +64,7 @@ try {
             created_at,
             updated_at
             FROM reports
+            $whereSql
             ORDER BY created_at DESC
             LIMIT $limit OFFSET $offset";
 

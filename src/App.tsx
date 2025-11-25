@@ -25,6 +25,11 @@ import EditRaidboss from "./pages/admin/raidboss/EditRaidboss";
 import Notifications from "./pages/admin/notifications/Notifications";
 import AddNotifications from "./pages/admin/notifications/AddNotifications";
 
+//Events
+import Events from "./pages/admin/events/Events";
+import AddEvent from "./pages/admin/events/AddEvent";
+import EditEvent from "./pages/admin/events/EditEvent";
+
 //Reports
 import Reports from "./pages/admin/report/Report";
 
@@ -67,6 +72,11 @@ export default function App() {
             {/* Notifications Management */}
             <Route path="notifications" element={<Notifications />} />
             <Route path="notifications/add" element={<AddNotifications />} />
+
+            {/* Events Management */}
+            <Route path="events" element={<Events />} />
+            <Route path="events/add" element={<AddEvent />} />
+            <Route path="events/edit/:id" element={<EditEvent />} />
 
             {/* Report Management */}
             <Route path="reports" element={<Reports />} />

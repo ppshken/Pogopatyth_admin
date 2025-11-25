@@ -556,12 +556,14 @@ export default function Raidrooms() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge
-                          size="sm"
-                          color={statusColor[r.status] ?? "gray"}
-                        >
-                          {r.status}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          <Badge
+                            size="sm"
+                            color={statusColor[r.status] ?? "gray"}
+                          >
+                            {r.status}
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       {/* Room Details Column */}
