@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Button, Label, TextInput, Textarea, FileInput } from "flowbite-react";
+import { Button, Label, TextInput, Textarea } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { getErrorMessage } from "../../../component/functions/getErrorMessage";
 

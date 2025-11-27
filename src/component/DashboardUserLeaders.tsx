@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Spinner, TextInput, Label, Avatar } from "flowbite-react";
+import { Button, Spinner, TextInput, Label } from "flowbite-react";
 import { AlertComponent } from "../component/alert";
 import {
   BarChart,
