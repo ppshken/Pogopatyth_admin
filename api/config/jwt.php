@@ -2,7 +2,7 @@
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-require_once __DIR__ . "/../../vendor/autoload.php";
+require_once __DIR__ . "/../vendor/autoload.php";
 
 $JWT_SECRET = "my_super_secret_key"; // เปลี่ยนเป็น key ของคุณ
 
