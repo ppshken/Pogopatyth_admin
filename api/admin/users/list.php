@@ -54,7 +54,7 @@ try {
     }
 
     // ✅ ดึงข้อมูลผู้ใช้
-    $sql = "SELECT id, email, username, avatar, role, level, team, status, plan, plan_expires_at, created_at
+    $sql = "SELECT id, email, username, avatar, role, level, team, status, google_sub, plan, plan_expires_at, created_at
             FROM users
             $whereSql
             ORDER BY created_at DESC

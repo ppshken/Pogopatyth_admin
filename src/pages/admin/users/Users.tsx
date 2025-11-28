@@ -12,6 +12,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownDivider,
+  Avatar,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { ModalComponent } from "../../../component/modal";
@@ -29,6 +30,7 @@ type User = {
   level: number;
   team?: string;
   status: string;
+  google_sub?: string | null;
   plan?: string;
   plan_expires_at?: string | null;
   created_at?: string | null;
@@ -43,6 +45,7 @@ type RawUser = {
   level?: number | string | null;
   team?: string | null;
   status?: string | null;
+  google_sub?: string | null;
   plan?: string | null;
   plan_expires_at?: string | null;
   created_at?: string | null;
@@ -165,6 +168,7 @@ export default function Users() {
         level: Number(u.level ?? 0) || 0,
         team: u.team ?? "-",
         status: String(u.status ?? "inactive"),
+        google_sub: u.google_sub ?? null,
         plan: u.plan ?? "free",
         plan_expires_at: u.plan_expires_at ?? null,
         created_at: u.created_at ?? null,
@@ -244,7 +248,7 @@ export default function Users() {
 
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xl">
+      <div className="mx-auto max-w-screen-xxl">
         {/* Header + Controls */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -339,7 +343,14 @@ export default function Users() {
                       <div className="truncate font-semibold text-gray-900 dark:text-white">
                         {u.username ?? "-"}
                       </div>
-                      <div className="truncate text-xs text-gray-500">
+                      <div className="truncate text-xs flex gap-2 text-gray-500">
+                        {u.google_sub && (
+                          <img
+                            src="../assets/google-logo.png"
+                            alt="avatar of Jese"
+                            className="w-4"
+                          />
+                        )}
                         {u.email}
                       </div>
                     </div>
@@ -434,14 +445,25 @@ export default function Users() {
                     <TableCell>
                       <div className="flex min-w-0 items-center gap-2">
                         <UserAvatar
-                          src={u.avatar || undefined}
+                          src={u.avatar}
                           name={u.username}
                           id={u.id}
                         />
                         <span className="truncate">{u.username}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="truncate">{u.email}</TableCell>
+                    <TableCell className="truncate">
+                      <div className="flex min-w-0 items-center gap-2">
+                        {u.google_sub && (
+                          <img
+                            src="../assets/google-logo.png"
+                            alt="avatar of Jese"
+                            className="w-4"
+                          />
+                        )}
+                        <span className="truncate">{u.email}</span>
+                      </div>
+                    </TableCell>
                     <TableCell>{u.level}</TableCell>
                     <TableCell>
                       <span

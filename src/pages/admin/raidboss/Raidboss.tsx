@@ -270,7 +270,7 @@ export default function RaidBosses() {
   /* ---------- UI ---------- */
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xl">
+      <div className="max-w-screen-xxl mx-auto">
         {/* Header */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -590,9 +590,10 @@ export default function RaidBosses() {
             <Table className="min-w-[980px] table-fixed text-sm">
               <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
                 <TableRow>
-                  <TableHeadCell className="w-[22%]">โปเกม่อน</TableHeadCell>
+                  <TableHeadCell className="w-[15%]">โปเกม่อน</TableHeadCell>
                   <TableHeadCell className="w-[8%]">ระดับ</TableHeadCell>
-                  <TableHeadCell className="w-[12%]">Type</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">ประเภท</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">Special</TableHeadCell>
                   <TableHeadCell className="w-[14%]">
                     วันที่เริ่มต้น
                   </TableHeadCell>
@@ -666,15 +667,12 @@ export default function RaidBosses() {
                               )}
                             </div>
                           )}
-                          <div className="flex flex-wrap gap-1">
-                            <Badge
-                              size="sm"
-                              color={b.special ? "green" : "gray"}
-                            >
-                              {b.special ? "Special" : "-"}
-                            </Badge>
-                          </div>
                         </div>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Badge size="sm" color={b.special ? "green" : "gray"}>
+                          {b.special ? "Special" : "-"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {formatDate(b.start_date)}

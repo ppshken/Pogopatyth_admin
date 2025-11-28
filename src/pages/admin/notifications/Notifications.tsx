@@ -177,7 +177,7 @@ export default function Notifications() {
 
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xl">
+      <div className="mx-auto max-w-screen-xxl">
         {/* Header */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

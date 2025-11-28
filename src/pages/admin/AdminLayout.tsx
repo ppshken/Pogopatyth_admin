@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { Button } from "flowbite-react";
-import { DarkThemeToggle } from "flowbite-react";
+import { DarkThemeToggle, SidebarCollapse, SidebarItem } from "flowbite-react";
 
 //icon
 import {
@@ -14,6 +14,7 @@ import {
   IoCalendarOutline,
   IoSettingsOutline 
 } from "react-icons/io5";
+import { BiArchive } from "react-icons/bi";
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(false);
@@ -174,6 +175,20 @@ export default function AdminLayout() {
             >
               <IoCalendarOutline  />
               อีเวนท์
+            </NavLink>
+
+            <NavLink
+              to="/admin/logs"
+              onClick={() => setOpen(false)}
+              className={({ isActive }: { isActive: boolean }) =>
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium " +
+                (isActive
+                  ? "bg-primary-600 text-white"
+                  : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700")
+              }
+            >
+              <BiArchive />
+              ประวัติ
             </NavLink>
 
             <NavLink

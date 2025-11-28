@@ -115,7 +115,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xl">
+      <div className="mx-auto max-w-screen-xxl">
         {/* Header */}
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>

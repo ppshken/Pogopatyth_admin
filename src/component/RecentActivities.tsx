@@ -132,7 +132,7 @@ export default function RecentActivities() {
 
   return (
     <div className="mt-8">
-      <div className="mx-auto max-w-screen-xl">
+      <div className="mx-auto max-w-screen-xxl">
         {/* Header */}
         <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
           <div>

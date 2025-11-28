@@ -206,7 +206,7 @@ export default function Events() {
   /* ---------- UI ---------- */
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xl">
+      <div className="mx-auto max-w-screen-xxl">
         {/* Header */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -342,8 +342,7 @@ export default function Events() {
             <Table className="min-w-[900px] table-fixed text-sm">
               <TableHead className="bg-gray-50 dark:bg-gray-700">
                 <TableRow>
-                  <TableHeadCell className="w-[10%]">ID</TableHeadCell>
-                  <TableHeadCell className="w-[15%]">รูปภาพ</TableHeadCell>
+                  <TableHeadCell className="w-[10%]">รูปภาพ</TableHeadCell>
                   <TableHeadCell className="w-[25%]">หัวข้อ</TableHeadCell>
                   <TableHeadCell className="w-[30%]">รายละเอียด</TableHeadCell>
                   <TableHeadCell className="w-[12%]">วันที่สร้าง</TableHeadCell>
@@ -370,9 +369,6 @@ export default function Events() {
                     key={ev.id}
                     className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700"
                   >
-                    <TableCell className="font-medium text-gray-900 dark:text-white">
-                      {ev.id}
-                    </TableCell>
                     <TableCell>
                       <EventImage src={ev.image} title={ev.title} />
                     </TableCell>

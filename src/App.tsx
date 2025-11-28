@@ -30,13 +30,15 @@ import Events from "./pages/admin/events/Events";
 import AddEvent from "./pages/admin/events/AddEvent";
 import EditEvent from "./pages/admin/events/EditEvent";
 
+//Logs
+import Logs from "./pages/admin/logs/logs";
+
 //Reports
 import Reports from "./pages/admin/report/Report";
 
 export default function App() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
-
       <main className="min-h-screen">
         <Routes>
           {/* Login */}
@@ -55,7 +57,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
 
             {/* User Management */}
-            <Route path="users" element={<Users />} />          
+            <Route path="users" element={<Users />} />
             <Route path="users/add" element={<AddUser />} />
             <Route path="users/edit/:id" element={<EditUser />} />
             <Route path="users/detail/:id" element={<UserDetail />} />
@@ -77,6 +79,9 @@ export default function App() {
             <Route path="events" element={<Events />} />
             <Route path="events/add" element={<AddEvent />} />
             <Route path="events/edit/:id" element={<EditEvent />} />
+
+            {/* Logs Management */}
+            <Route path="logs" element={<Logs />} />
 
             {/* Report Management */}
             <Route path="reports" element={<Reports />} />
