@@ -36,6 +36,9 @@ import Logs from "./pages/admin/logs/logs";
 //Reports
 import Reports from "./pages/admin/report/Report";
 
+//Settings
+import Settings from "./pages/admin/Settings";
+
 export default function App() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -82,6 +85,9 @@ export default function App() {
 
             {/* Logs Management */}
             <Route path="logs" element={<Logs />} />
+
+            {/* Settings Management */}
+            <Route path="settings" element={<Settings />} />           
 
             {/* Report Management */}
             <Route path="reports" element={<Reports />} />
