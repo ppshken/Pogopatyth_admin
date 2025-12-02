@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   Button,
@@ -11,10 +11,11 @@ import {
 import { AlertComponent } from "../../../component/alert";
 import { getErrorMessage } from "../../../component/functions/getErrorMessage";
 
+/* ---------- Types ---------- */
 type FormState = {
   pokemon_id: string;
   pokemon_name: string;
-  pokemon_image: string;
+  pokemon_image: string; // เก็บค่าเดิมจาก DB (เผื่อไม่ได้แก้)
   pokemon_tier: string;
   type: string;
   special: boolean;
@@ -24,32 +25,116 @@ type FormState = {
   cp_boost_max: string;
   start_date: string;
   end_date: string;
+  maximum: string;
   imageMode: "url" | "upload";
   pokemon_image_url: string;
   imageFile: File | null;
 };
 
-const tierOptions = ["1", "2", "3", "4", "5", "6"];
+type ApiResponse = {
+  success?: boolean;
+  message?: string;
+  data?: any;
+  boss?: any; // เผื่อ API เก่าส่ง key นี้
+};
+
+type PokemonOption = {
+  id: number;
+  name: string;
+};
+
+/* ---------- Constants ---------- */
+const tierOptions = ["1", "3", "4", "5", "6"]; // ปรับ Tier ตามเกมจริง (ปัจจุบันหลักๆ คือ 1, 3, 5, Mega/Primal คือ 6)
 const typeOptions = ["normal", "shadow", "mega", "dynamax", "gigantamax"];
 
-// "YYYY-MM-DD" -> "YYYY-MM-DD HH:mm:ss"
+/* ---------- Utils ---------- */
+
+// แปลงค่าจาก Input ("YYYY-MM-DDTHH:mm") -> ส่ง API ("YYYY-MM-DD HH:mm:ss")
 function fromInputValue(v?: string) {
   if (!v) return "";
-  return `${v} 00:00:00`;
+  const [d, t] = v.split("T");
+  const hhmm = (t || "00:00").length === 5 ? `${t}:00` : t || "00:00:00";
+  return `${d} ${hhmm}`;
 }
-// "YYYY-MM-DD HH:mm:ss" (หรือ ISO) -> "YYYY-MM-DD"
-function toDateInput(v?: string | null) {
+
+// แปลงค่าจาก API ("YYYY-MM-DD HH:mm:ss") -> ใส่ Input ("YYYY-MM-DDTHH:mm")
+function toInputDate(v?: string | null) {
   if (!v) return "";
-  const s = String(v);
-  if (s.includes("T")) return s.split("T")[0] || "";
-  if (s.includes(" ")) return s.split(" ")[0] || "";
-  return s.slice(0, 10);
+  // ตัดวินาทีออกถ้ามี และเปลี่ยน space เป็น T
+  // Ex: "2023-10-25 10:00:00" -> "2023-10-25T10:00"
+  return v.replace(" ", "T").substring(0, 16);
+}
+
+/* Avatar fallback */
+const AVATAR_COLORS = [
+  "bg-rose-500",
+  "bg-orange-500",
+  "bg-amber-500",
+  "bg-lime-500",
+  "bg-emerald-500",
+  "bg-teal-500",
+  "bg-cyan-500",
+  "bg-sky-500",
+  "bg-blue-500",
+  "bg-indigo-500",
+  "bg-violet-500",
+  "bg-purple-500",
+  "bg-fuchsia-500",
+  "bg-pink-500",
+];
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function getInitial(name?: string, id?: string) {
+  const base = (name && name.trim()) || (id ? String(id) : "?");
+  return base.charAt(0).toUpperCase();
+}
+function FallbackAvatar({
+  name,
+  id,
+  size = 28,
+}: {
+  name?: string;
+  id?: string;
+  size?: number;
+}) {
+  const key = name?.toLowerCase() || `mon_${id ?? ""}`;
+  const color = AVATAR_COLORS[hashString(key) % AVATAR_COLORS.length];
+  const cls = `rounded-lg ${color} flex items-center justify-center font-semibold uppercase text-white ring-1 ring-black/10`;
+  return (
+    <div
+      className={cls}
+      style={{
+        width: size,
+        height: size,
+        fontSize: Math.max(12, Math.floor(size * 0.42)),
+      }}
+      title={name || (id ? `#${id}` : "pokemon")}
+    >
+      {getInitial(name, id)}
+    </div>
+  );
 }
 
 export default function EditRaidboss() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const API_BASE = import.meta.env.VITE_API_BASE as string;
 
+  const POKE_BASE =
+    "https://www.pokemon.com/static-assets/content-assets/cms2/img/pokedex/full";
+
+  const buildPokeUrl = (rawId: string) => {
+    const digits = rawId.replace(/\D/g, "");
+    if (!digits) return "";
+    const n = Number(digits);
+    const idStr = n < 1000 ? String(n).padStart(3, "0") : String(n);
+    return `${POKE_BASE}/${idStr}.png`;
+  };
+
+  // State Form
   const [form, setForm] = useState<FormState>({
     pokemon_id: "",
     pokemon_name: "",
@@ -63,31 +148,138 @@ export default function EditRaidboss() {
     cp_boost_max: "",
     start_date: "",
     end_date: "",
+    maximum: "",
     imageMode: "url",
     pokemon_image_url: "",
     imageFile: null,
   });
 
+  // State UI
+  const [pokemonList, setPokemonList] = useState<PokemonOption[]>([]);
+  const [loadingList, setLoadingList] = useState(true);
+  const [loadingData, setLoadingData] = useState(true); // โหลดข้อมูลบอส
   const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
 
-  const API_BASE = import.meta.env.VITE_API_BASE as string;
-  const GET_URL = `${API_BASE}/api/admin/raidboss/detail.php?id=${encodeURIComponent(
-    id || "",
-  )}`;
-  const UPDATE_URL = `${API_BASE}/api/admin/raidboss/update.php`; // <- ปรับตามไฟล์จริง
+  // 1. Fetch Pokemon List (สำหรับ Dropdown)
+  useEffect(() => {
+    const fetchPokemonList = async () => {
+      try {
+        const res = await fetch(
+          "https://pogoapi.net/api/v1/pokemon_names.json",
+        );
+        const data = await res.json();
+        const list: PokemonOption[] = Object.values(data)
+          .map((p: any) => ({
+            id: p.id,
+            name: p.name,
+          }))
+          .sort((a: any, b: any) => a.id - b.id);
+        setPokemonList(list);
+      } catch (err) {
+        console.error("Failed to fetch pokemon names", err);
+      } finally {
+        setLoadingList(false);
+      }
+    };
+    fetchPokemonList();
+  }, []);
+
+  // 2. Fetch Existing Boss Data
+  useEffect(() => {
+    if (!id) return;
+    const fetchDetail = async () => {
+      try {
+        setLoadingData(true);
+        const token = localStorage.getItem("auth_token") || "";
+        const res = await fetch(
+          `${API_BASE}/api/admin/raidboss/detail.php?id=${id}`,
+          {
+            headers: { Authorization: token ? `Bearer ${token}` : "" },
+          },
+        );
+        const body = await res.json();
+
+        if (!body?.success) throw new Error(body?.message || "ไม่พบข้อมูล");
+
+        const b = body.data || body.boss || {};
+
+        // Map data to form
+        setForm({
+          pokemon_id: String(b.pokemon_id ?? ""),
+          pokemon_name: String(b.pokemon_name ?? ""),
+          pokemon_image: String(b.pokemon_image ?? ""),
+          pokemon_tier: String(b.pokemon_tier ?? ""),
+          type: String(b.type ?? ""),
+          special: Boolean(Number(b.special)),
+          cp_normal_min: String(b.cp_normal_min ?? ""),
+          cp_normal_max: String(b.cp_normal_max ?? ""),
+          cp_boost_min: String(b.cp_boost_min ?? ""),
+          cp_boost_max: String(b.cp_boost_max ?? ""),
+          start_date: toInputDate(b.start_date), // แปลงวันที่
+          end_date: toInputDate(b.end_date), // แปลงวันที่
+          maximum: String(b.maximum ?? ""),
+          imageMode: "url", // เริ่มต้นเป็น URL เสมอ เพราะรูปเดิมเป็น URL
+          pokemon_image_url: String(b.pokemon_image ?? ""),
+          imageFile: null,
+        });
+      } catch (e) {
+        setError(getErrorMessage(e));
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    fetchDetail();
+  }, [id, API_BASE]);
+
+  // Handle Select Pokemon from Dropdown
+  const handlePokemonSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value;
+    const selectedPokemon = pokemonList.find(
+      (p) => String(p.id) === selectedId,
+    );
+
+    if (selectedPokemon) {
+      setForm((prev) => ({
+        ...prev,
+        pokemon_id: String(selectedPokemon.id),
+        pokemon_name: selectedPokemon.name,
+        pokemon_image_url: buildPokeUrl(String(selectedPokemon.id)), // Auto generate Image URL
+      }));
+    } else {
+      // กรณีเลือก Pokemon เดิม (หรือว่าง)
+      // ถ้าต้องการ Logic อื่น เช่น ไม่ให้แก้ ให้ปรับตรงนี้
+    }
+  };
+
+  const handleChange = (name: keyof FormState, value: any) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   function change<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm((s) => ({ ...s, [k]: v }));
   }
 
+  // Preview Image Logic
+  useEffect(() => {
+    if (form.imageMode === "upload" && form.imageFile) {
+      const url = URL.createObjectURL(form.imageFile);
+      setUploadPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setUploadPreview(null);
+  }, [form.imageMode, form.imageFile]);
+
+  const previewSrc = useMemo(() => {
+    if (form.imageMode === "upload") return uploadPreview || undefined;
+    return form.pokemon_image_url || undefined;
+  }, [form.imageMode, uploadPreview, form.pokemon_image_url]);
+
+  // Validation
   function validate(): string | null {
-    if (!form.pokemon_id.trim()) return "กรุณากรอก Pokemon ID";
-    if (!/^\d+$/.test(form.pokemon_id.trim()))
-      return "Pokemon ID ต้องเป็นตัวเลข";
-    if (!form.pokemon_name.trim()) return "กรุณากรอกชื่อโปเกม่อน";
+    if (!form.pokemon_id.trim()) return "กรุณาเลือกโปเกม่อน";
     if (!form.pokemon_tier.trim()) return "กรุณาเลือก Tier";
     if (!form.type.trim()) return "กรุณาเลือก Type";
     if (!form.start_date) return "กรุณาเลือกวันเริ่ม";
@@ -114,68 +306,10 @@ export default function EditRaidboss() {
     const end = new Date(form.end_date).getTime();
     if (start && end && start > end) return "วันเริ่มต้องไม่มากกว่าวันสิ้นสุด";
 
-    if (form.imageMode === "url") {
-      if (
-        form.pokemon_image_url &&
-        !/^https?:\/\//i.test(form.pokemon_image_url)
-      ) {
-        return "รูปแบบ URL รูปไม่ถูกต้อง (ต้องขึ้นต้นด้วย http:// หรือ https://)";
-      }
-    } else {
-      if (!form.imageFile) return "กรุณาอัปโหลดไฟล์รูปหรือสลับไปโหมด URL";
-      if (form.imageFile.size > 2 * 1024 * 1024)
-        return "ไฟล์รูปต้องไม่เกิน 2MB";
-    }
     return null;
   }
 
-  // โหลดข้อมูลเดิมมาเติมในฟอร์ม
-  useEffect(() => {
-    (async () => {
-      if (!id) {
-        setError("ไม่พบ ID");
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        setError(null);
-        const token = localStorage.getItem("auth_token") || "";
-        const res = await fetch(GET_URL, {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-        });
-        if (!res.ok) throw new Error(`API returned ${res.status}`);
-        const body = await res.json();
-        if (!body?.success)
-          throw new Error(body?.message || "โหลดข้อมูลไม่สำเร็จ");
-
-        const b = body.data || body.boss || {};
-        setForm({
-          pokemon_id: String(b.pokemon_id ?? ""),
-          pokemon_name: String(b.pokemon_name ?? ""),
-          pokemon_image: String(b.pokemon_image ?? ""),
-          pokemon_tier: String(b.pokemon_tier ?? ""),
-          type: String(b.type ?? ""),
-          special: Boolean(b.special) || false,
-          cp_normal_min: String(b.cp_normal_min ?? ""),
-          cp_normal_max: String(b.cp_normal_max ?? ""),
-          cp_boost_min: String(b.cp_boost_min ?? ""),
-          cp_boost_max: String(b.cp_boost_max ?? ""),
-          start_date: toDateInput(b.start_date),
-          end_date: toDateInput(b.end_date),
-          imageMode: "url",
-          pokemon_image_url: String(b.pokemon_image ?? ""),
-          imageFile: null,
-        });
-      } catch (e) {
-        setError(getErrorMessage(e) || "เกิดข้อผิดพลาด");
-      } finally {
-        setLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
+  // Submit Handler
   async function handleSubmit() {
     const msg = validate();
     if (msg) {
@@ -187,10 +321,11 @@ export default function EditRaidboss() {
     setSubmitting(true);
 
     const token = localStorage.getItem("auth_token") || "";
+    const UPDATE_URL = `${API_BASE}/api/admin/raidboss/update.php`;
 
     try {
       const common = {
-        id: Number(id),
+        id: Number(id), // ต้องส่ง ID กลับไปเพื่อ Update
         pokemon_id: Number(form.pokemon_id.trim()),
         pokemon_name: form.pokemon_name.trim(),
         pokemon_tier: form.pokemon_tier,
@@ -202,28 +337,17 @@ export default function EditRaidboss() {
         cp_boost_max: form.cp_boost_max ? Number(form.cp_boost_max) : null,
         start_date: fromInputValue(form.start_date),
         end_date: fromInputValue(form.end_date),
+        maximum: form.maximum,
       };
 
       let res: Response;
 
+      // กรณี Upload รูปใหม่
       if (form.imageMode === "upload" && form.imageFile) {
         const fd = new FormData();
-        fd.append("id", String(common.id));
-        fd.append("pokemon_id", String(common.pokemon_id));
-        fd.append("pokemon_name", common.pokemon_name);
-        fd.append("pokemon_tier", String(common.pokemon_tier));
-        fd.append("type", String(common.type));
-        fd.append("special", String(common.special));
-        if (common.cp_normal_min)
-          fd.append("cp_normal_min", String(common.cp_normal_min));
-        if (common.cp_normal_max)
-          fd.append("cp_normal_max", String(common.cp_normal_max));
-        if (common.cp_boost_min)
-          fd.append("cp_boost_min", String(common.cp_boost_min));
-        if (common.cp_boost_max)
-          fd.append("cp_boost_max", String(common.cp_boost_max));
-        fd.append("start_date", common.start_date);
-        fd.append("end_date", common.end_date);
+        Object.entries(common).forEach(([key, value]) => {
+          if (value !== null) fd.append(key, String(value));
+        });
         fd.append("image", form.imageFile);
 
         res = await fetch(UPDATE_URL, {
@@ -232,7 +356,9 @@ export default function EditRaidboss() {
           body: fd,
         });
       } else {
-        const body: any = { ...common };
+        // กรณีใช้ URL (หรือไม่ได้แก้รูป)
+        const body: Record<string, unknown> = { ...common };
+        // ส่ง URL กลับไป (ถ้ามีการแก้ไข หรือใช้ URL เดิม)
         if (form.pokemon_image_url.trim()) {
           body.pokemon_image = form.pokemon_image_url.trim();
         }
@@ -246,7 +372,7 @@ export default function EditRaidboss() {
         });
       }
 
-      const data = await res.json();
+      const data: ApiResponse = await res.json();
       if (!res.ok || !data?.success) {
         throw new Error(data?.message || `Server returned ${res.status}`);
       }
@@ -263,8 +389,12 @@ export default function EditRaidboss() {
     }
   }
 
-  if (loading) {
-    return <div className="p-4 text-sm text-gray-500">กำลังโหลด...</div>;
+  if (loadingData) {
+    return (
+      <div className="p-10 text-center">
+        <Spinner size="xl" />
+      </div>
+    );
   }
 
   return (
@@ -290,7 +420,7 @@ export default function EditRaidboss() {
               aria-busy={submitting}
             >
               {submitting && <Spinner size="sm" className="mr-2" />}
-              บันทึก
+              บันทึกการแก้ไข
             </Button>
           </div>
         </div>
@@ -319,30 +449,56 @@ export default function EditRaidboss() {
                   ข้อมูลพื้นฐาน
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label>Pokemon ID</Label>
-                    <TextInput
-                      type="number"
-                      placeholder="เช่น 384"
-                      value={form.pokemon_id}
-                      onChange={(e) => change("pokemon_id", e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Pokemon Name</Label>
-                    <TextInput
-                      placeholder="เช่น Rayquaza"
-                      value={form.pokemon_name}
-                      onChange={(e) => change("pokemon_name", e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Tier</Label>
+                  {/* Pokemon Select (Auto Fill) */}
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="pokemon_select">
+                      เลือกโปเกม่อน (เปลี่ยนตัว)
+                    </Label>
                     <Select
+                      id="pokemon_select"
+                      value={form.pokemon_id}
+                      onChange={handlePokemonSelect}
+                      required
+                      disabled={loadingList}
+                    >
+                      <option value="">
+                        {loadingList
+                          ? "กำลังโหลดรายชื่อ..."
+                          : "-- เลือกโปเกม่อน --"}
+                      </option>
+                      {!loadingList &&
+                        pokemonList.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            #{String(p.id).padStart(3, "0")} - {p.name}
+                          </option>
+                        ))}
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="pokemon_id">Pokemon ID (Auto)</Label>
+                    <TextInput
+                      id="pokemon_id"
+                      value={form.pokemon_id}
+                      readOnly
+                      color="gray"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="pokemon_name">ชื่อโปเกม่อน (Auto)</Label>
+                    <TextInput
+                      id="pokemon_name"
+                      value={form.pokemon_name}
+                      readOnly
+                      color="gray"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="pokemon_tier">เทียร์</Label>
+                    <Select
+                      id="pokemon_tier"
                       value={form.pokemon_tier}
                       onChange={(e) => change("pokemon_tier", e.target.value)}
                       required
@@ -357,8 +513,9 @@ export default function EditRaidboss() {
                   </div>
 
                   <div>
-                    <Label>Pokemon Type</Label>
+                    <Label htmlFor="type">Pokemon Type</Label>
                     <Select
+                      id="type"
                       value={form.type}
                       onChange={(e) => change("type", e.target.value)}
                       required
@@ -372,22 +529,28 @@ export default function EditRaidboss() {
                     </Select>
                   </div>
 
-                  <div className="sm:col-span-2">
-                    <Label>Special (Optional)</Label>
-                    <div className="mt-2 flex items-center gap-3">
-                      <input
-                        id="special"
-                        type="checkbox"
-                        checked={form.special}
-                        onChange={(e) => change("special", e.target.checked)}
-                      />
-                      <label
-                        htmlFor="special"
-                        className="text-gray-700 dark:text-gray-300"
-                      >
-                        เป็นบอสพิเศษ (เช่น Shadow, Mega Evolution)
-                      </label>
-                    </div>
+                  <div>
+                    <Label htmlFor="maximum">จำนวนผู้เข้าร่วมสูงสุด</Label>
+                    <TextInput
+                      id="maximum"
+                      type="number"
+                      value={form.maximum}
+                      onChange={(e) => change("maximum", e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 sm:col-span-2">
+                    <input
+                      id="special"
+                      type="checkbox"
+                      checked={form.special}
+                      onChange={(e) => change("special", e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-2"
+                    />
+                    <Label htmlFor="special" className="m-0 cursor-pointer">
+                      Special Form (Shadow, Mega, etc.)
+                    </Label>
                   </div>
                 </div>
               </div>
@@ -402,44 +565,37 @@ export default function EditRaidboss() {
                 </h3>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <Label>CP Normal Min</Label>
+                    <Label htmlFor="cp_normal_min">CP Normal Min</Label>
                     <TextInput
+                      id="cp_normal_min"
                       type="number"
-                      inputMode="numeric"
-                      placeholder="เช่น 1500"
                       value={form.cp_normal_min}
                       onChange={(e) => change("cp_normal_min", e.target.value)}
                     />
                   </div>
-
                   <div>
-                    <Label>CP Normal Max</Label>
+                    <Label htmlFor="cp_normal_max">CP Normal Max</Label>
                     <TextInput
+                      id="cp_normal_max"
                       type="number"
-                      inputMode="numeric"
-                      placeholder="เช่น 1800"
                       value={form.cp_normal_max}
                       onChange={(e) => change("cp_normal_max", e.target.value)}
                     />
                   </div>
-
                   <div>
-                    <Label>CP Boost Min</Label>
+                    <Label htmlFor="cp_boost_min">CP Boost Min</Label>
                     <TextInput
+                      id="cp_boost_min"
                       type="number"
-                      inputMode="numeric"
-                      placeholder="เช่น 1875"
                       value={form.cp_boost_min}
                       onChange={(e) => change("cp_boost_min", e.target.value)}
                     />
                   </div>
-
                   <div>
-                    <Label>CP Boost Max</Label>
+                    <Label htmlFor="cp_boost_max">CP Boost Max</Label>
                     <TextInput
+                      id="cp_boost_max"
                       type="number"
-                      inputMode="numeric"
-                      placeholder="เช่น 2250"
                       value={form.cp_boost_max}
                       onChange={(e) => change("cp_boost_max", e.target.value)}
                     />
@@ -447,7 +603,10 @@ export default function EditRaidboss() {
                 </div>
               </div>
             </div>
+          </div>
 
+          {/* Right: Image & Time */}
+          <div className="space-y-4">
             {/* Card: Schedule */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
               <div className="h-1 w-full bg-gradient-to-r from-purple-500 to-pink-500" />
@@ -455,22 +614,24 @@ export default function EditRaidboss() {
                 <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
                   ช่วงเวลา
                 </h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-4">
                   <div>
-                    <Label>Start Date</Label>
+                    <Label htmlFor="start_date">วันที่เริ่มต้น</Label>
                     <TextInput
-                      type="date"
+                      id="start_date"
+                      type="datetime-local"
                       value={form.start_date}
                       onChange={(e) => change("start_date", e.target.value)}
                       required
                     />
                   </div>
-
                   <div>
-                    <Label>End Date</Label>
+                    <Label htmlFor="end_date">วันที่สิ้นสุด</Label>
                     <TextInput
-                      type="date"
+                      id="end_date"
+                      type="datetime-local"
                       value={form.end_date}
+                      min={form.start_date || undefined}
                       onChange={(e) => change("end_date", e.target.value)}
                       required
                     />
@@ -478,10 +639,8 @@ export default function EditRaidboss() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Right: Image */}
-          <div className="space-y-4">
+            {/* Card: Image */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
               <div className="h-1 w-full bg-gradient-to-r from-teal-500 to-cyan-500" />
               <div className="p-4">
@@ -490,7 +649,6 @@ export default function EditRaidboss() {
                     size="xs"
                     color={form.imageMode === "url" ? "info" : "light"}
                     onClick={() => change("imageMode", "url")}
-                    className="dark:text-white"
                   >
                     ใช้ URL
                   </Button>
@@ -498,7 +656,6 @@ export default function EditRaidboss() {
                     size="xs"
                     color={form.imageMode === "upload" ? "info" : "light"}
                     onClick={() => change("imageMode", "upload")}
-                    className="dark:text-white"
                   >
                     อัปโหลดไฟล์
                   </Button>
@@ -506,46 +663,54 @@ export default function EditRaidboss() {
 
                 {form.imageMode === "url" ? (
                   <div className="space-y-2">
-                    <Label>Pokemon Image (URL)</Label>
+                    <Label htmlFor="pokemon_image_url">
+                      Pokemon Image URL (Auto)
+                    </Label>
                     <TextInput
+                      id="pokemon_image_url"
                       placeholder="https://..."
                       value={form.pokemon_image_url}
                       onChange={(e) =>
                         change("pokemon_image_url", e.target.value)
                       }
                     />
-                    <div className="mt-2">
-                      {form.pokemon_image_url ? (
-                        <img
-                          src={form.pokemon_image_url}
-                          alt="preview"
-                          className="h-28 w-28 rounded object-cover ring-1 ring-gray-200"
-                        />
-                      ) : null}
-                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <Label>Upload File Image</Label>
+                    <Label htmlFor="imageFile">Upload Image</Label>
                     <input
+                      id="imageFile"
                       type="file"
                       accept="image/*"
-                      className="mt-1 block w-full text-sm"
+                      className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-900 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:placeholder-gray-400"
                       onChange={(e) =>
                         change("imageFile", e.target.files?.[0] || null)
                       }
                     />
-                    <div className="mt-2">
-                      {form.imageFile ? (
-                        <img
-                          src={URL.createObjectURL(form.imageFile)}
-                          alt="preview"
-                          className="h-28 w-28 rounded object-cover ring-1 ring-gray-200"
-                        />
-                      ) : null}
-                    </div>
                   </div>
                 )}
+
+                <div className="mt-4 flex flex-col items-center">
+                  <div className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Preview
+                  </div>
+                  {previewSrc ? (
+                    <img
+                      src={previewSrc}
+                      alt="preview"
+                      className="h-28 w-28 rounded-lg bg-gray-50 object-contain ring-1 ring-gray-200"
+                    />
+                  ) : (
+                    <FallbackAvatar
+                      name={form.pokemon_name}
+                      id={form.pokemon_id}
+                      size={112}
+                    />
+                  )}
+                  <div className="mt-2 text-center text-xs text-gray-500">
+                    {form.pokemon_name || "ยังไม่ระบุชื่อ"}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -192,7 +192,7 @@ export default function AdminLayout() {
             </NavLink>
 
             <NavLink
-              to="/admin/settings"
+              to="/admin/settings_app"
               onClick={() => setOpen(false)}
               className={({ isActive }: { isActive: boolean }) =>
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium " +

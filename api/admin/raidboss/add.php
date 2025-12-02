@@ -55,6 +55,7 @@ try {
     $cp_boost_min = isset($data['cp_boost_min']) ? intval($data['cp_boost_min']) : null;
     $cp_boost_max = isset($data['cp_boost_max']) ? intval($data['cp_boost_max']) : null;
     $special = isset($data['special']) ? boolval($data['special']) : false;
+    $maximum = intval($data['maximum'] ?? 0);
 
     if (!$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date || !$end_date) {
         throw new Exception("กรุณากรอก ข้อมูลให้ครบถ้วน");
@@ -69,8 +70,8 @@ try {
         throw new Exception("pokemon_id นี้ ถูกเพิ่มแล้ว");
     }
 
-    $stmt = $pdo->prepare("INSERT INTO `raid_boss`(`pokemon_id`, `pokemon_name`, `pokemon_image`, `pokemon_tier`, `start_date`, `end_date`, `type`, `cp_normal_min`, `cp_normal_max`, `cp_boost_min`, `cp_boost_max`, `special`) 
-    VALUES (:pokemon_id, :pokemon_name, :pokemon_image, :pokemon_tier, :start_date, :end_date, :type, :cp_normal_min, :cp_normal_max, :cp_boost_min, :cp_boost_max, :special)");
+    $stmt = $pdo->prepare("INSERT INTO `raid_boss`(`pokemon_id`, `pokemon_name`, `pokemon_image`, `pokemon_tier`, `start_date`, `end_date`, `type`, `cp_normal_min`, `cp_normal_max`, `cp_boost_min`, `cp_boost_max`, `special`, `maximum`) 
+    VALUES (:pokemon_id, :pokemon_name, :pokemon_image, :pokemon_tier, :start_date, :end_date, :type, :cp_normal_min, :cp_normal_max, :cp_boost_min, :cp_boost_max, :special, :maximum)");
 
     $stmt->execute([
         ":pokemon_id" => $pokemon_id,
@@ -85,6 +86,7 @@ try {
         ":cp_boost_min" => $cp_boost_min,
         ":cp_boost_max" => $cp_boost_max,
         ":special" => $special ? 1 : 0,
+        ":maximum" => $maximum,
     ]);
 
     echo json_encode([

@@ -44,7 +44,7 @@ try {
 
     // ✅ Search
     $search = $_GET['search'] ?? '';
-    $whereSql = "WHERE 1=1";
+    $whereSql = "WHERE 1=1 AND role <> 'admin'";
     $params = [];
 
     if ($search) {

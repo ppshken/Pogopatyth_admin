@@ -64,7 +64,7 @@ try {
         $params[]  = $tier;
     }
 
-    // ✅ ดึงรายการ
+// ✅ ดึงรายการ
     $sql = "SELECT
                 id,
                 pokemon_id,
@@ -82,7 +82,19 @@ try {
                 created_at
             FROM raid_boss
             $whereSql
-            ORDER BY start_date DESC, created_at DESC
+            ORDER BY 
+                -- 1. จัดลำดับความสำคัญ (Priority)
+                CASE 
+                    -- ถ้าเวลาปัจจุบัน อยู่ระหว่าง เริ่ม และ จบ (กำลังดำเนินการ) -> ให้เป็นลำดับ 1
+                    WHEN start_date <= NOW() AND end_date >= NOW() THEN 1 
+                    -- ถ้าเวลาเริ่ม มากกว่า ปัจจุบัน (อนาคต/ยังไม่มา) -> ให้เป็นลำดับ 2
+                    WHEN start_date > NOW() THEN 2
+                    -- อื่นๆ (จบไปแล้ว) -> ให้เป็นลำดับ 3
+                    ELSE 3 
+                END ASC,
+                -- 2. ในกลุ่มเดียวกัน ให้เรียงตามวันที่เริ่มล่าสุดก่อน
+                start_date DESC, 
+                created_at DESC
             LIMIT $limit OFFSET $offset";
 
     $stmt = $pdo->prepare($sql);

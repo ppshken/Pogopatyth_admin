@@ -59,6 +59,7 @@ try {
     cp_normal_max,
     cp_boost_min,
     cp_boost_max,
+    maximum,
     created_at
     FROM raid_boss WHERE id = :id");
     $stmt->execute([":id" => $raid_boss_id]);

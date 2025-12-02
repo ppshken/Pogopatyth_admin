@@ -682,7 +682,7 @@ export default function RaidBosses() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge size="sm" color={active ? "success" : "gray"}>
+                        <Badge size="sm" color={active ? "success" : "failure"}>
                           {active ? "ใช้งาน" : "ไม่ใช้งาน"}
                         </Badge>
                       </TableCell>

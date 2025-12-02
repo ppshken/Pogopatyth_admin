@@ -37,7 +37,7 @@ import Logs from "./pages/admin/logs/logs";
 import Reports from "./pages/admin/report/Report";
 
 //Settings
-import Settings from "./pages/admin/Settings";
+import SettingsApp from "./pages/admin/settings_app/Settings_app";
 
 export default function App() {
   return (
@@ -87,7 +87,7 @@ export default function App() {
             <Route path="logs" element={<Logs />} />
 
             {/* Settings Management */}
-            <Route path="settings" element={<Settings />} />           
+            <Route path="settings_app" element={<SettingsApp />} />           
 
             {/* Report Management */}
             <Route path="reports" element={<Reports />} />

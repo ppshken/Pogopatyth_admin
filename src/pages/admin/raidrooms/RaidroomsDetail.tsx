@@ -212,16 +212,10 @@ export default function RaidroomsDetail() {
   > = {
     join: "green",
     leave: "red",
-    kick: "red",
     invite: "blue",
-    accept: "green",
-    reject: "red",
-    start: "purple",
-    end: "gray",
-    close: "yellow",
+    create: "green",
     cancel: "red",
-    update: "indigo",
-    comment: "cyan",
+    review: "yellow",
   };
 
   // ดึงรายละเอียดห้อง

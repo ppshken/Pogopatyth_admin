@@ -52,7 +52,7 @@ try {
     $cp_boost_min   = isset($input["cp_boost_min"])  ? intval($input["cp_boost_min"])  : null;
     $cp_boost_max   = isset($input["cp_boost_max"])  ? intval($input["cp_boost_max"])  : null;
     $special        = isset($input["special"]) ? boolval($input["special"]) : false;
-
+    $maximum        = intval($data['maximum'] ?? 10);
 
     if (!$id || !$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date  || !$end_date) {
         throw new Exception("กรุณากรอก ข้อมูลให้ครบถ้วน");
@@ -71,7 +71,8 @@ try {
                 cp_normal_max = :cp_normal_max,
                 cp_boost_min = :cp_boost_min,
                 cp_boost_max = :cp_boost_max,
-                special = :special
+                special = :special,
+                maximum = :maximum
             WHERE id = :id";
 
     $params = [
@@ -88,6 +89,7 @@ try {
         ":cp_boost_min"  => $cp_boost_min,
         ":cp_boost_max"  => $cp_boost_max,
         ":special"       => $special ? 1 : 0,
+        ":maximum"       => $maximum,
     ];
 
     $stmt = $pdo->prepare($sql);
