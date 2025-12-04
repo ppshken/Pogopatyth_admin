@@ -127,13 +127,13 @@ export default function AddRaidboss() {
     pokemon_tier: "",
     type: "",
     special: false,
-    cp_normal_min: "",
-    cp_normal_max: "",
-    cp_boost_min: "",
-    cp_boost_max: "",
+    cp_normal_min: "0",
+    cp_normal_max: "0",
+    cp_boost_min: "0",
+    cp_boost_max: "0",
     start_date: "",
     end_date: "",
-    maximum: "6",
+    maximum: "10",
     imageMode: "url",
     pokemon_image_url: "",
     imageFile: null,
@@ -418,7 +418,7 @@ export default function AddRaidboss() {
                     <TextInput
                       id="pokemon_id"
                       value={form.pokemon_id}
-                      readOnly
+                      onChange={(e) => change("pokemon_id", e.target.value)}
                       color="gray" // ให้ดูเหมือน Readonly
                     />
                   </div>
@@ -428,7 +428,7 @@ export default function AddRaidboss() {
                     <TextInput
                       id="pokemon_name"
                       value={form.pokemon_name}
-                      readOnly
+                      onChange={(e) => change("pokemon_name", e.target.value)}
                       color="gray"
                     />
                   </div>

@@ -248,7 +248,7 @@ export default function Users() {
 
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xxl">
+      <div className="max-w-screen-xxl mx-auto">
         {/* Header + Controls */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -343,7 +343,7 @@ export default function Users() {
                       <div className="truncate font-semibold text-gray-900 dark:text-white">
                         {u.username ?? "-"}
                       </div>
-                      <div className="truncate text-xs flex gap-2 text-gray-500">
+                      <div className="flex gap-2 truncate text-xs text-gray-500">
                         {u.google_sub && (
                           <img
                             src="../assets/google-logo.png"
@@ -373,8 +373,8 @@ export default function Users() {
                   <div className="col-span-2">
                     {u.plan === "premium" ? (
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center gap-1 rounded bg-gradient-to-r from-yellow-400 to-orange-500 px-2 py-1 text-xs font-bold text-white">
-                          ⭐ VIP
+                        <span className="rounded bg-gradient-to-r from-amber-200 to-yellow-400 px-2 py-0.5 text-xs font-bold text-yellow-900">
+                          Premium
                         </span>
                         <span className="text-xs text-gray-500">
                           หมด: {formatDate(u.plan_expires_at)}
@@ -493,8 +493,8 @@ export default function Users() {
                     <TableCell>
                       {u.plan === "premium" ? (
                         <div className="flex flex-col items-start gap-1">
-                          <span className="inline-flex items-center gap-1 rounded bg-gradient-to-r from-yellow-400 to-orange-500 px-3 py-1 text-xs font-bold text-white shadow-md">
-                            ⭐ VIP
+                          <span className="rounded bg-gradient-to-r from-amber-200 to-yellow-400 px-2 py-0.5 text-xs font-bold text-yellow-900">
+                            Premium
                           </span>
                           <span className="text-xs text-gray-500">
                             หมดอายุ: {formatDate(u.plan_expires_at)}

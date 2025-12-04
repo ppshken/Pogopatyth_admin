@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { Button } from "flowbite-react";
-import { DarkThemeToggle, SidebarCollapse, SidebarItem } from "flowbite-react";
+import { DarkThemeToggle } from "flowbite-react";
 
 //icon
 import {
@@ -221,8 +221,8 @@ export default function AdminLayout() {
 
         {/* Main content area */}
         <div className="flex flex-1 flex-col lg:pl-64">
-          {/* Top navbar */}
-          <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 lg:px-6 dark:border-gray-700 dark:bg-gray-800">
+          {/* Top navbar - Added sticky top-0 z-20 */}
+          <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 lg:px-6 dark:border-gray-700 dark:bg-gray-800">
             <div className="flex items-center gap-4">
               <button
                 className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-sm lg:hidden dark:bg-gray-700"

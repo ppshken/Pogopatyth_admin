@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router"; // ✅ แก้เป็น react-router-dom
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Badge,
   Button,
@@ -9,91 +9,148 @@ import {
   TableHead,
   TableHeadCell,
   TableRow,
+  Avatar, // ใช้สำหรับรูปเพื่อน
+  Card, // ใช้ครอบ
 } from "flowbite-react";
+import {
+  HiExclamationCircle,
+  HiFlag,
+  HiShieldCheck,
+  HiUsers, // ไอคอนเพื่อน
+} from "react-icons/hi";
 import { AlertComponent } from "../../../component/alert";
 import { formatDate } from "../../../component/functions/formatDate";
 import { getErrorMessage } from "../../../component/functions/getErrorMessage";
 
-/* ======================= Types ======================= */
-type UserBase = {
+/* ======================= Types (ตรงกับ API PHP) ======================= */
+
+// 1. Profile
+type UserProfile = {
   id: number;
   email: string;
   username: string;
-  friend_code?: string | null;
-  level?: number | null;
-  status?: string | null;
-  created_at?: string | null;
   avatar?: string | null;
+  friend_code?: string | null;
+  team?: "Instinct" | "Mystic" | "Valor" | null;
+  level?: number | null;
+  status?: "active" | "banned" | null;
+  role?: "member" | "admin" | null;
+  created_at?: string | null;
+  plan?: "free" | "premium" | null;
 };
 
+// 2. Stats
 type UserStats = {
-  rooms_owned?: number;
-  rooms_joined?: number;
-  reviews_count?: number;
-  avg_rating?: number;
-  reviews_received_avg?: number;
-  last_active_at?: string | null;
+  host_rating: number;
+  total_hosted: number;
+  total_reviews_received: number;
+  total_friends: number; // ✅ เพิ่มจำนวนเพื่อน
 };
 
-type UserReview = {
+// 3. Reviews Received
+type ReviewItem = {
   id: number;
-  room_id?: number | null;
   rating: number;
   comment?: string | null;
-  created_at?: string | null;
-  room_boss?: string | null;
-};
-
-type UserActivity = {
-  id?: number | string;
-  type: string;
-  title?: string;
-  description?: string | null;
   created_at: string;
-  meta?: Record<string, unknown>;
+  room_boss?: string | null;
+  reviewer_name?: string | null;
 };
 
-type ApiOKMinimal = { success: true; data: UserBase };
-type ApiOKExtended = {
-  success: true;
-  data: {
-    user: UserBase;
-    stats?: UserStats | null;
-    reviews?: UserReview[] | null;
-    activities?: UserActivity[] | null;
-  };
+// 4. Reports
+type ReportItem = {
+  id: number;
+  reason: string;
+  status: string;
+  created_at: string;
 };
-type ApiResponse = ApiOKMinimal | ApiOKExtended;
+
+// 5. Timeline
+type TimelineItem = {
+  source: "system" | "raid" | "host";
+  action: string;
+  detail: string;
+  target?: string | null;
+  time: string;
+};
+
+// 6. Friendship (NEW)
+type FriendItem = {
+  id: number;
+  username: string;
+  avatar?: string | null;
+  team?: "Instinct" | "Mystic" | "Valor" | null;
+  level?: number | null;
+  became_friend_at: string;
+};
+
+// API Response Structure
+type ApiData = {
+  profile: UserProfile;
+  stats: UserStats;
+  reports: {
+    received: ReportItem[];
+    written: ReportItem[];
+  };
+  reviews_received: ReviewItem[];
+  timeline: TimelineItem[];
+  friends: FriendItem[]; // ✅ เพิ่ม friends array
+};
+
+type ApiResponse = {
+  success: boolean;
+  data: ApiData;
+  message?: string;
+};
 
 /* ======================= Helpers ======================= */
 const AVATAR_COLORS = [
-  "bg-rose-500","bg-orange-500","bg-amber-500","bg-lime-500","bg-emerald-500",
-  "bg-teal-500","bg-cyan-500","bg-sky-500","bg-blue-500","bg-indigo-500",
-  "bg-violet-500","bg-purple-500","bg-fuchsia-500","bg-pink-500",
+  "bg-rose-500",
+  "bg-orange-500",
+  "bg-amber-500",
+  "bg-lime-500",
+  "bg-emerald-500",
+  "bg-teal-500",
+  "bg-cyan-500",
+  "bg-sky-500",
+  "bg-blue-500",
+  "bg-indigo-500",
+  "bg-violet-500",
+  "bg-purple-500",
+  "bg-fuchsia-500",
+  "bg-pink-500",
 ];
+
+const TEAM_COLORS: Record<string, string> = {
+  Instinct: "text-yellow-400 bg-yellow-50 border-yellow-200",
+  Mystic: "text-blue-500 bg-blue-50 border-blue-200",
+  Valor: "text-red-500 bg-red-50 border-red-200",
+};
+
 function hashString(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
   return Math.abs(h);
 }
+
 function getInitial(name?: string | null, id?: number) {
   const base = (name && name.trim()) || (id ? String(id) : "?");
   return base.charAt(0).toUpperCase();
 }
+
 function formatFriendCode(v?: string | null) {
   if (!v) return "-";
   const digits = v.replace(/\D/g, "").slice(0, 12);
   return digits ? digits.replace(/(\d{4})(?=\d)/g, "$1 ").trim() : "-";
 }
-function calcAvg(reviews?: UserReview[] | null): number | null {
-  if (!reviews || reviews.length === 0) return null;
-  const vals = reviews.map((r) => Number(r.rating)).filter((n) => !Number.isNaN(n));
-  if (vals.length === 0) return null;
-  return vals.reduce((a, b) => a + b, 0) / vals.length;
-}
 
-/** ⭐ แสดงดาว 0..5 รองรับทศนิยม */
-function StarRating({ value = 0, size = 16 }: { value?: number | null; size?: number }) {
+function StarRating({
+  value = 0,
+  size = 16,
+}: {
+  value?: number | null;
+  size?: number;
+}) {
   const v = Math.max(0, Math.min(5, Number(value ?? 0)));
   const stars = new Array(5).fill(0).map((_, i) => {
     const idx = i + 1;
@@ -101,9 +158,14 @@ function StarRating({ value = 0, size = 16 }: { value?: number | null; size?: nu
     if (v >= idx) fill = "currentColor";
     else if (v > i && v < idx) fill = "url(#grad)";
     return (
-      <svg key={i} width={size} height={size} viewBox="0 0 20 20" className="inline-block">
+      <svg
+        key={i}
+        width={size}
+        height={size}
+        viewBox="0 0 20 20"
+        className="inline-block"
+      >
         <defs>
-          {/* ใช้ id เดียวกันในแต่ละ SVG โอเคเพราะ scope แยกกัน */}
           <linearGradient id="grad">
             <stop offset={`${(v - i) * 100}%`} stopColor="currentColor" />
             <stop offset={`${(v - i) * 100}%`} stopColor="transparent" />
@@ -117,14 +179,21 @@ function StarRating({ value = 0, size = 16 }: { value?: number | null; size?: nu
       </svg>
     );
   });
-  return <span className="text-yellow-500">{stars}</span>;
+  return <span className="text-yellow-400">{stars}</span>;
 }
 
-/** Avatar: ถ้าไม่มีรูป → ตัวอักษรแรก + สี */
 function UserAvatar({
-  src, username, id, size = 64,
-}: { src?: string | null; username?: string | null; id?: number; size?: number; }) {
-  const style = { width: size, height: size }; // ✅ ใช้ style แทนคลาสไดนามิก
+  src,
+  username,
+  id,
+  size = 64,
+}: {
+  src?: string | null;
+  username?: string | null;
+  id?: number;
+  size?: number;
+}) {
+  const style = { width: size, height: size };
   if (src) {
     return (
       <img
@@ -155,11 +224,7 @@ export default function UserDetail() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [user, setUser] = useState<UserBase | null>(null);
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [reviews, setReviews] = useState<UserReview[]>([]);
-  const [activities, setActivities] = useState<UserActivity[]>([]);
+  const [data, setData] = useState<ApiData | null>(null);
 
   async function fetchDetail() {
     if (!id) {
@@ -172,6 +237,7 @@ export default function UserDetail() {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE as string;
       const token = localStorage.getItem("auth_token") || "";
+      // เปลี่ยนกลับเป็น by_id.php ตามที่ generate ให้
       const url = `${API_BASE}/api/admin/users/by_id.php?user_id=${encodeURIComponent(id)}`;
 
       const res = await fetch(url, {
@@ -179,27 +245,13 @@ export default function UserDetail() {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
 
-      // ป้องกัน JSON ว่าง/เสีย
-      const text = await res.text();
-      const json: ApiResponse = text ? JSON.parse(text) : ({} as any);
+      const json: ApiResponse = await res.json();
 
-      if (!res.ok || !(json as any)?.success) {
-        const msg = (json as any)?.message || `Server returned ${res.status}`;
-        throw new Error(msg);
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || `Server Error ${res.status}`);
       }
 
-      if ("user" in (json as ApiOKExtended).data) {
-        const j = json as ApiOKExtended;
-        setUser(j.data.user);
-        setStats(j.data.stats ?? null);
-        setReviews(Array.isArray(j.data.reviews) ? j.data.reviews : []);
-        setActivities(Array.isArray(j.data.activities) ? j.data.activities : []);
-      } else {
-        setUser((json as ApiOKMinimal).data as UserBase);
-        setStats(null);
-        setReviews([]);
-        setActivities([]);
-      }
+      setData(json.data);
     } catch (e) {
       setError(getErrorMessage(e) || "โหลดข้อมูลไม่สำเร็จ");
     } finally {
@@ -209,39 +261,37 @@ export default function UserDetail() {
 
   useEffect(() => {
     fetchDetail();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const avgRating = useMemo<number | null>(() => {
-    if (stats?.reviews_received_avg != null) return Number(stats.reviews_received_avg);
-    return calcAvg(reviews);
-  }, [stats?.reviews_received_avg, reviews]);
-
-  const TypeColor: Record<string, string> = {
-    เข้าร่วมห้องบอส: "info",
-    เขียนรีวิว: "indigo",
-    ได้รับรีวิว: "pink",
-    สร้างห้องบอส: "success",
+  const TimelineColor: Record<string, string> = {
+    join: "info",
+    create: "success",
+    invite: "warning",
+    review: "purple",
+    login: "gray",
   };
 
   return (
-    <div className="p-3 sm:p-4">
-      <div className="mx-auto max-w-screen-xl">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 dark:bg-gray-900">
+      <div className="mx-auto max-w-screen-xl space-y-5">
         {/* Header */}
-        <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 sm:text-2xl">
+            <h3 className="text-xl font-bold text-gray-900 sm:text-2xl dark:text-gray-100">
               รายละเอียดผู้ใช้
             </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              ข้อมูลโปรไฟล์ สถิติการใช้งาน รีวิว และกิจกรรมล่าสุดของผู้ใช้
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              ข้อมูลโปรไฟล์ สถิติการเป็น Host เพื่อน และประวัติการใช้งาน
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button color="light" size="sm" onClick={() => fetchDetail()}>
               รีเฟรช
             </Button>
-            <Button size="sm" onClick={() => navigate(`/admin/users/edit/${id}`)}>
+            <Button
+              size="sm"
+              onClick={() => navigate(`/admin/users/edit/${id}`)}
+            >
               แก้ไข
             </Button>
             <Button color="gray" size="sm" onClick={() => navigate(-1)}>
@@ -250,228 +300,205 @@ export default function UserDetail() {
           </div>
         </div>
 
-        {/* Alerts */}
-        {error && (
-          <div className="mb-4">
-            <AlertComponent type="failure" message={error} />
-          </div>
-        )}
+        {error && <AlertComponent type="failure" message={error} />}
 
-        {/* Loading skeleton */}
         {loading && (
-          <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
-            <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <div className="h-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 sm:h-28" />
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <div className="h-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 sm:h-28" />
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-              <div className="h-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 sm:h-28" />
-            </div>
+          <div className="flex justify-center py-20">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
           </div>
         )}
 
-        {!loading && user && (
+        {!loading && data && (
           <>
-            {/* Top cards */}
-            <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
-              {/* Card: User */}
-              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <div className="flex items-start gap-3">
-                  <UserAvatar src={user.avatar} username={user.username} id={user.id} size={64} />
-                  <div className="min-w-0">
+            {/* ⚠️ Warning Card */}
+            {data.reports.received.length > 0 && (
+              <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200">
+                <HiExclamationCircle className="mt-0.5 h-6 w-6 shrink-0" />
+                <div>
+                  <h4 className="font-bold">
+                    ผู้ใช้นี้ถูกรายงาน {data.reports.received.length} ครั้ง
+                  </h4>
+                  <p className="mt-1 text-sm">
+                    โปรดตรวจสอบรายละเอียดในส่วน "ประวัติการรายงาน" ด้านล่าง
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Top Cards Grid (4 Columns) */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+              {/* Card 1: User Profile */}
+              <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2 dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex items-start gap-4">
+                  <UserAvatar
+                    src={data.profile.avatar}
+                    username={data.profile.username}
+                    id={data.profile.id}
+                    size={72}
+                  />
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="truncate text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
-                        {user.username} <span className="text-xs text-gray-500">#{user.id}</span>
+                      <h4 className="truncate text-lg font-bold text-gray-900 dark:text-white">
+                        {data.profile.username}
                       </h4>
-                      {user.status && (
-                        <Badge color={user.status === "active" ? "success" : "failure"}>
-                          {user.status}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="mt-1 text-xs text-gray-600 dark:text-gray-300 break-all">
-                      {user.email}
-                    </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <div className="text-gray-500 dark:text-gray-400">Friend Code</div>
-                        <div className="font-medium dark:text-white">
-                          {formatFriendCode(user.friend_code)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-gray-500 dark:text-gray-400">Level</div>
-                        <div className="font-medium dark:text-white">{user.level ?? "-"}</div>
-                      </div>
-                      <div className="col-span-2">
-                        <div className="text-gray-500 dark:text-gray-400">สร้างเมื่อ</div>
-                        <div className="font-medium dark:text-white">
-                          {formatDate(user.created_at)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card: Stats */}
-              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <h4 className="mb-2 text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
-                  สถิติการใช้งาน
-                </h4>
-                <div className="grid grid-cols-2 gap-2 text-center sm:gap-3">
-                  <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-                    <div className="text-xs text-gray-500">ห้องที่สร้าง</div>
-                    <div className="text-lg font-bold dark:text-white sm:text-xl">
-                      {stats?.rooms_owned ?? "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-                    <div className="text-xs text-gray-500">ห้องที่เข้าร่วม</div>
-                    <div className="text-lg font-bold dark:text-white sm:text-xl">
-                      {stats?.rooms_joined ?? "—"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-                    <div className="text-xs text-gray-500">จำนวนรีวิว</div>
-                    <div className="text-lg font-bold dark:text-white sm:text-xl">
-                      {stats?.reviews_count ?? reviews.length}
-                    </div>
-                  </div>
-                  <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-                    <div className="text-xs text-gray-500">ใช้งานครั้งล่าสุด</div>
-                    <div className="text-sm font-medium dark:text-white">
-                      {formatDate(stats?.last_active_at)}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card: Rating */}
-              <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                <h4 className="mb-2 text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
-                  เรตติ้งโดยรวม
-                </h4>
-                <div className="flex items-center gap-3">
-                  <StarRating value={avgRating ?? 0} size={18} />
-                  <div className="text-lg font-bold text-gray-900 dark:text-gray-100 sm:text-xl">
-                    {avgRating != null ? avgRating.toFixed(2) : "—"}/5
-                  </div>
-                </div>
-                <div className="mt-1 text-xs text-gray-500">
-                  อิงจาก {stats?.reviews_count ?? reviews.length} รีวิว
-                </div>
-              </div>
-            </div>
-
-            {/* Reviews */}
-            <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
-                  รีวิวของผู้ใช้
-                </h4>
-                <div className="text-sm text-gray-500">
-                  รวม {stats?.reviews_count ?? reviews.length} รายการ
-                </div>
-              </div>
-
-              {/* ✅ มือถือ: แสดงเป็นการ์ด */}
-              <div className="space-y-3 md:hidden dark:text-white">
-                {reviews.length === 0 ? (
-                  <div className="py-6 text-center text-gray-500">ยังไม่มีรีวิว</div>
-                ) : (
-                  reviews.map((rv) => (
-                    <div
-                      key={rv.id}
-                      className="rounded-lg border border-gray-200 p-3 dark:border-gray-700"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <StarRating value={rv.rating} size={14} />
-                          <span className="text-sm font-semibold">
-                            {Number(rv.rating).toFixed(1)}
-                          </span>
-                        </div>
-                        <span className="text-xs text-gray-500">
-                          {formatDate(rv.created_at)}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-sm font-medium">
-                        {rv.room_boss ?? (rv.room_id ? `Room #${rv.room_id}` : "-")}
-                      </div>
-                      <div className="mt-1 text-sm text-gray-700 dark:text-gray-200 break-words">
-                        {rv.comment || "-"}
-                      </div>
-                      <div className="mt-2 flex justify-end">
-                        <Button
-                          size="xs"
-                          disabled={!rv.room_id}
-                          onClick={() =>
-                            rv.room_id && navigate(`/admin/raidrooms/detail/${rv.room_id}`)
+                      {data.profile.status && (
+                        <Badge
+                          color={
+                            data.profile.status === "active"
+                              ? "success"
+                              : "failure"
                           }
                         >
-                          ดูข้อมูล
-                        </Button>
+                          {data.profile.status}
+                        </Badge>
+                      )}
+                      {data.profile.role === "admin" && (
+                        <Badge color="purple">Admin</Badge>
+                      )}
+                    </div>
+                    <div className="text-sm break-all text-gray-500 dark:text-gray-400">
+                      {data.profile.email}
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      {data.profile.team && (
+                        <span
+                          className={`rounded border px-2 py-0.5 text-xs font-bold ${TEAM_COLORS[data.profile.team] || "bg-gray-100 text-gray-600"}`}
+                        >
+                          Team {data.profile.team}
+                        </span>
+                      )}
+                      {data.profile.plan === "premium" && (
+                        <span className="rounded bg-gradient-to-r from-amber-200 to-yellow-400 px-2 py-0.5 text-xs font-bold text-yellow-900">
+                          Premium
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
+                      <div>
+                        <div className="text-xs text-gray-500">Friend Code</div>
+                        <div className="font-medium dark:text-white">
+                          {formatFriendCode(data.profile.friend_code)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Level</div>
+                        <div className="font-medium dark:text-white">
+                          {data.profile.level || "-"}
+                        </div>
                       </div>
                     </div>
-                  ))
-                )}
+                  </div>
+                </div>
               </div>
 
-              {/* เดสก์ท็อป: Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <Table className="min-w-[720px] table-fixed text-sm">
+              {/* Card 2: Host Stats */}
+              <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                  <HiShieldCheck className="text-blue-500" /> สถิติ Host
+                </h4>
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="rounded-lg bg-gray-50 p-2 dark:bg-gray-700/50">
+                    <div className="text-2xl font-extrabold text-blue-600 dark:text-blue-400">
+                      {data.stats.total_hosted}
+                    </div>
+                    <div className="text-xs text-gray-400">สร้างห้อง</div>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 p-2 dark:bg-gray-700/50">
+                    <div className="text-2xl font-extrabold text-purple-600 dark:text-purple-400">
+                      {data.stats.total_reviews_received}
+                    </div>
+                    <div className="text-xs text-gray-400">รีวิวที่ได้</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Friends & Rating */}
+              <div className="grid grid-rows-2 gap-4">
+                {/* Rating */}
+                <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                  <div>
+                    <div className="text-xs text-gray-500">Host Rating</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-gray-500">
+                        {data.stats.host_rating.toFixed(1)}
+                      </span>
+                      <StarRating value={data.stats.host_rating} size={16} />
+                    </div>
+                  </div>
+                </div>
+                {/* Friends Count */}
+                <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                  <div>
+                    <div className="text-xs text-gray-500">เพื่อนทั้งหมด</div>
+                    <div className="text-2xl font-bold text-teal-600 dark:text-teal-400">
+                      {data.stats.total_friends}
+                    </div>
+                  </div>
+                  <HiUsers className="h-8 w-8 text-teal-100 dark:text-teal-900" />
+                </div>
+              </div>
+            </div>
+
+            {/* --- Table: Reviews --- */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center justify-between border-b border-gray-100 p-4 dark:border-gray-700">
+                <h4 className="font-bold text-gray-900 dark:text-white">
+                  รีวิวที่ได้รับล่าสุด
+                </h4>
+                <Badge color="gray">{data.reviews_received.length}</Badge>
+              </div>
+              <div className="overflow-x-auto">
+                <Table hoverable>
                   <TableHead>
-                    <TableRow>
-                      <TableHeadCell className="w-[12%]">คะแนน</TableHeadCell>
-                      <TableHeadCell className="w-[24%]">ห้อง/บอส</TableHeadCell>
-                      <TableHeadCell>ความคิดเห็น</TableHeadCell>
-                      <TableHeadCell className="w-[18%]">วันที่</TableHeadCell>
-                    </TableRow>
+                    <TableHeadCell className="w-[150px]">คะแนน</TableHeadCell>
+                    <TableHeadCell>ความคิดเห็น</TableHeadCell>
+                    <TableHeadCell>จากห้อง</TableHeadCell>
+                    <TableHeadCell>โดย</TableHeadCell>
+                    <TableHeadCell className="text-right">วันที่</TableHeadCell>
                   </TableHead>
                   <TableBody className="divide-y">
-                    {reviews.length === 0 ? (
+                    {data.reviews_received.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="py-6 text-center text-gray-500">
-                          ยังไม่มีรีวิว
+                        <TableCell
+                          colSpan={5}
+                          className="py-6 text-center text-gray-500"
+                        >
+                          ไม่มีข้อมูลรีวิว
                         </TableCell>
                       </TableRow>
                     ) : (
-                      reviews.map((rv) => (
-                        <TableRow key={rv.id} className="bg-white dark:border-gray-700 dark:bg-gray-800">
-                          <TableCell className="whitespace-nowrap">
-                            <div className="flex items-center gap-2">
+                      data.reviews_received.map((rv) => (
+                        <TableRow
+                          key={rv.id}
+                          className="bg-white dark:bg-gray-800"
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-2 font-bold text-gray-900 dark:text-white">
                               <StarRating value={rv.rating} size={14} />
-                              <span className="font-semibold">
-                                {Number(rv.rating).toFixed(1)}
-                              </span>
+                              {rv.rating}
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="min-w-0">
-                              <div className="truncate font-medium">
-                                {rv.room_boss ?? (rv.room_id ? `Room #${rv.room_id}` : "-")}
-                              </div>
-                            </div>
+                            <p className="line-clamp-1 text-gray-600 dark:text-gray-300">
+                              {rv.comment || "-"}
+                            </p>
                           </TableCell>
                           <TableCell>
-                            <div className="truncate">{rv.comment || "-"}</div>
+                            {rv.room_boss ? (
+                              <Badge color="indigo" className="w-fit">
+                                {rv.room_boss}
+                              </Badge>
+                            ) : (
+                              "-"
+                            )}
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              {formatDate(rv.created_at)}
-                              <Button
-                                size="sm"
-                                disabled={!rv.room_id}
-                                onClick={() =>
-                                  rv.room_id && navigate(`/admin/raidrooms/detail/${rv.room_id}`)
-                                }
-                              >
-                                ดูข้อมูล
-                              </Button>
-                            </div>
+                          <TableCell className="font-medium whitespace-nowrap">
+                            {rv.reviewer_name || "Anonymous"}
+                          </TableCell>
+                          <TableCell className="text-right text-xs whitespace-nowrap text-gray-500">
+                            {formatDate(rv.created_at)}
                           </TableCell>
                         </TableRow>
                       ))
@@ -481,94 +508,210 @@ export default function UserDetail() {
               </div>
             </div>
 
-            {/* Activities */}
-            <div className="mt-5 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-              <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
-                  การเคลื่อนไหวล่าสุด
+            {/* --- Table: Reports --- */}
+            {(data.reports.received.length > 0 ||
+              data.reports.written.length > 0) && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="overflow-hidden rounded-xl border border-red-200 bg-white shadow-sm dark:border-red-900 dark:bg-gray-800">
+                  <div className="flex items-center justify-between border-b border-red-100 bg-red-50 p-4 dark:border-red-900 dark:bg-red-900/30">
+                    <h4 className="flex items-center gap-2 font-bold text-red-700 dark:text-red-300">
+                      <HiFlag /> ประวัติถูกรายงาน
+                    </h4>
+                    <Badge color="failure">
+                      {data.reports.received.length}
+                    </Badge>
+                  </div>
+                  <div className="max-h-[300px] space-y-3 overflow-y-auto p-4">
+                    {data.reports.received.length === 0 ? (
+                      <p className="text-sm text-gray-500">ไม่เคยถูกรายงาน</p>
+                    ) : (
+                      data.reports.received.map((rp) => (
+                        <div
+                          key={rp.id}
+                          className="rounded border border-red-100 bg-red-50/50 p-3 text-sm dark:border-red-900/50 dark:bg-red-900/10"
+                        >
+                          <div className="mb-1 flex justify-between">
+                            <span className="font-bold text-red-600">
+                              #{rp.id} {rp.status}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {formatDate(rp.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-gray-700 dark:text-gray-300">
+                            {rp.reason}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                  <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 p-4 dark:bg-gray-700">
+                    <h4 className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-200">
+                      <HiExclamationCircle /> ประวัติการแจ้งปัญหา
+                    </h4>
+                    <Badge color="gray">{data.reports.written.length}</Badge>
+                  </div>
+                  <div className="max-h-[300px] space-y-3 overflow-y-auto p-4">
+                    {data.reports.written.length === 0 ? (
+                      <p className="text-sm text-gray-500">ไม่เคยแจ้งปัญหา</p>
+                    ) : (
+                      data.reports.written.map((rp) => (
+                        <div
+                          key={rp.id}
+                          className="rounded border border-gray-100 bg-gray-50 p-3 text-sm dark:border-gray-600 dark:bg-gray-700/50"
+                        >
+                          <div className="mb-1 flex justify-between">
+                            <span className="font-bold text-gray-600 dark:text-gray-300">
+                              Target #{rp.id}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {formatDate(rp.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-gray-600 dark:text-gray-400">
+                            {rp.reason}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* --- Section: Friends List (NEW) --- */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center justify-between border-b border-gray-100 p-4 dark:border-gray-700">
+                <h4 className="flex items-center gap-2 font-bold text-gray-900 dark:text-white">
+                  <HiUsers className="text-teal-500" /> รายชื่อเพื่อน
                 </h4>
-                <div className="text-sm text-gray-500">รวม {activities.length} รายการ</div>
+                <Badge color="success">{data.friends.length}</Badge>
               </div>
 
-              {/* ✅ มือถือ: การ์ด */}
-              <div className="space-y-3 md:hidden dark:text-white">
-                {activities.length === 0 ? (
-                  <div className="py-6 text-center text-gray-500">ยังไม่มีข้อมูลการเคลื่อนไหว</div>
+              <div className="p-4">
+                {data.friends.length === 0 ? (
+                  <div className="py-6 text-center text-gray-500">
+                    ไม่มีเพื่อนในรายการ
+                  </div>
                 ) : (
-                  activities.map((ac) => (
-                    <div
-                      key={`${ac.type}-${ac.id ?? ac.created_at}`}
-                      className="rounded-lg border border-gray-200 p-3 dark:border-gray-700"
-                    >
-                      <div className="mb-1 flex items-center justify-between">
-                        <Badge color={TypeColor[ac.type] ?? "gray"}>{ac.type}</Badge>
-                        <span className="text-xs text-gray-500">{formatDate(ac.created_at)}</span>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    {data.friends.map((friend) => (
+                      <div
+                        key={friend.id}
+                        className="flex cursor-pointer items-center space-x-3 rounded-lg border border-gray-100 bg-white p-3 transition hover:shadow-md dark:border-gray-600 dark:bg-gray-700"
+                        onClick={() =>
+                          navigate(`/admin/users/detail/${friend.id}`)
+                        } // ลิงก์ไปดูเพื่อน
+                      >
+                        <div className="relative shrink-0">
+                          <Avatar
+                            img={friend.avatar || undefined}
+                            rounded
+                            placeholderInitials={friend.username
+                              .charAt(0)
+                              .toUpperCase()}
+                            size="md"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                            {friend.username}
+                          </p>
+                          <div className="mt-0.5 flex items-center gap-2">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              Lv.{friend.level || "?"}
+                            </span>
+                            {friend.team && (
+                              <span
+                                className={`rounded border px-1 text-[10px] ${TEAM_COLORS[friend.team]}`}
+                              >
+                                {friend.team}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm font-medium">{ac.title || "-"}</div>
-                      <div className="mt-1 text-sm text-gray-700 dark:text-gray-200 break-words">
-                        {ac.description || "-"}
-                      </div>
-                      <div className="mt-2 flex justify-end">
-                        <Button
-                          size="xs"
-                          disabled={!ac.meta || !(ac.meta as any).room_id}
-                          onClick={() =>
-                            (ac.meta as any)?.room_id &&
-                            navigate(`/admin/raidrooms/detail/${(ac.meta as any).room_id}`)
-                          }
-                        >
-                          ดูข้อมูล
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 )}
               </div>
+            </div>
 
-              {/* เดสก์ท็อป: Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <Table className="min-w-[720px] table-fixed text-sm">
+            {/* --- Table: Timeline --- */}
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <div className="flex items-center justify-between border-b border-gray-100 p-4 dark:border-gray-700">
+                <h4 className="font-bold text-gray-900 dark:text-white">
+                  Timeline การใช้งานล่าสุด
+                </h4>
+                <Badge color="info">{data.timeline.length}</Badge>
+              </div>
+
+              {/* Mobile View */}
+              <div className="block space-y-3 p-4 md:hidden">
+                {data.timeline.map((ac, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700"
+                  >
+                    <div className="mb-2 flex items-start justify-between">
+                      <Badge color={TimelineColor[ac.action] || "gray"}>
+                        {ac.action}
+                      </Badge>
+                      <span className="text-xs text-gray-500">
+                        {formatDate(ac.time)}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {ac.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop View */}
+              <div className="hidden overflow-x-auto md:block">
+                <Table>
                   <TableHead>
-                    <TableRow>
-                      <TableHeadCell className="w-[16%]">ประเภท</TableHeadCell>
-                      <TableHeadCell className="w-[24%]">หัวข้อ</TableHeadCell>
-                      <TableHeadCell>รายละเอียด</TableHeadCell>
-                      <TableHeadCell className="w-[18%]">เวลา</TableHeadCell>
-                    </TableRow>
+                    <TableHeadCell>กิจกรรม</TableHeadCell>
+                    <TableHeadCell>รายละเอียด</TableHeadCell>
+                    <TableHeadCell>Target/Ref</TableHeadCell>
+                    <TableHeadCell className="text-right">เวลา</TableHeadCell>
                   </TableHead>
                   <TableBody className="divide-y">
-                    {activities.length === 0 ? (
+                    {data.timeline.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="py-6 text-center text-gray-500">
-                          ยังไม่มีข้อมูลการเคลื่อนไหว
+                        <TableCell colSpan={4} className="py-6 text-center">
+                          ไม่มีข้อมูล
                         </TableCell>
                       </TableRow>
                     ) : (
-                      activities.map((ac) => (
-                        <TableRow key={`${ac.type}-${ac.id ?? ac.created_at}`}>
+                      data.timeline.map((ac, idx) => (
+                        <TableRow
+                          key={idx}
+                          className="bg-white dark:bg-gray-800"
+                        >
                           <TableCell className="whitespace-nowrap">
-                            <Badge color={TypeColor[ac.type] ?? "gray"}>{ac.type}</Badge>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <div className="truncate">{ac.title || "-"}</div>
+                            <Badge
+                              color={TimelineColor[ac.action] || "gray"}
+                              className="w-fit"
+                            >
+                              {ac.action}
+                            </Badge>
                           </TableCell>
                           <TableCell>
-                            <div className="truncate">{ac.description || "-"}</div>
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              {ac.detail}
+                            </span>
                           </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              {formatDate(ac.created_at)}
-                              <Button
-                                size="sm"
-                                disabled={!ac.meta || !(ac.meta as any).room_id}
-                                onClick={() =>
-                                  (ac.meta as any)?.room_id &&
-                                  navigate(`/admin/raidrooms/detail/${(ac.meta as any).room_id}`)
-                                }
-                              >
-                                ดูข้อมูล
-                              </Button>
-                            </div>
+                          <TableCell>
+                            <span className="rounded bg-gray-100 px-2 py-1 font-mono text-xs text-gray-500 dark:bg-gray-700">
+                              {ac.target || "-"}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right text-xs whitespace-nowrap text-gray-500">
+                            {formatDate(ac.time)}
                           </TableCell>
                         </TableRow>
                       ))
