@@ -3,48 +3,90 @@ import { useNavigate } from "react-router";
 import {
   Badge,
   Button,
+  Card,
+  Select,
+  Spinner,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeadCell,
   TableRow,
-  Spinner,
 } from "flowbite-react";
+import {
+  HiRefresh,
+  HiClock,
+  HiUser,
+  HiLogin,
+  HiUserAdd,
+  HiStatusOnline,
+  HiCube,
+} from "react-icons/hi";
 import { AlertComponent } from "../component/alert";
 import { formatDate } from "../component/functions/formatDate";
 import { getErrorMessage } from "../component/functions/getErrorMessage";
 
 // ======================= Types =======================
 export type Activity = {
-  id: number;
-  type: string; // "สร้างห้องบอส" | "เข้าร่วมห้องบอส" | "เขียนรีวิว" | "ได้รับรีวิว" | ...
-  title?: string | null;
-  description?: string | null;
-  created_at: string; // "YYYY-MM-DD HH:mm:ss"
-  meta?: {
-    room_id?: number | null;
-    boss?: string | null;
-    actor_id?: number | null;
-    actor_name?: string | null;
-    target_id?: number | null;
-    target_name?: string | null;
-    rating?: number | null;
-    comment?: string | null;
-  } | null;
+  source: string;
+  action: string;
+  detail: string;
+  target: string;
+  time: string;
+  by: string;
+  avatar: string;
 };
 
 // ======================= Helpers =======================
-const TYPE_COLOR: Record<
-  string,
-  NonNullable<React.ComponentProps<typeof Badge>["color"]>
-> = {
-  สร้างห้องบอส: "success",
-  เข้าร่วมห้องบอส: "info",
-  เขียนรีวิว: "indigo",
-  ได้รับรีวิว: "pink",
-  ส่งแชท: "purple",
-  เพิ่มเพื่อน: "cyan",
+
+function timeAgo(dateString: string): string {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+
+  if (diffSec < 60) return `${Math.max(0, diffSec)} วินาที ที่แล้ว`;
+
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} นาที ที่แล้ว`;
+
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} ชั่วโมง ที่แล้ว`;
+
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 30) return `${diffDay} วันที่แล้ว`;
+
+  const diffMonth = Math.floor(diffDay / 30);
+  if (diffMonth < 12) return `${diffMonth} เดือนที่แล้ว`;
+
+  const diffYear = Math.floor(diffDay / 365);
+  return `${diffYear} ปีที่แล้ว`;
+}
+
+const getActionConfig = (action: string) => {
+  switch (action) {
+    case "login":
+      return { color: "info", icon: HiLogin, label: "เข้าสู่ระบบ" };
+    case "online_lasted":
+      return { color: "gray", icon: HiStatusOnline, label: "ออนไลน์" };
+    case "join":
+      return { color: "indigo", icon: HiCube, label: "เข้าร่วมห้อง" };
+    case "create":
+      return { color: "success", icon: HiCube, label: "สร้างห้อง" };
+    case "invite":
+      return { color: "purple", icon: HiCube, label: "เชิญเพื่อน" };
+    case "addfriend":
+      return { color: "pink", icon: HiUserAdd, label: "เพิ่มเพื่อน" };
+    case "acceptfriend":
+      return { color: "warning", icon: HiUserAdd, label: "รับเพื่อน" };
+    default:
+      return { color: "light", icon: HiClock, label: action };
+  }
+};
+
+const extractRoomId = (detail: string): string | null => {
+  const match = detail.match(/Room #(\d+)/);
+  return match ? match[1] : null;
 };
 
 function readJsonSafe<T = any>(res: Response): Promise<T | null> {
@@ -58,32 +100,6 @@ function readJsonSafe<T = any>(res: Response): Promise<T | null> {
   });
 }
 
-function StarRating({
-  value = 0,
-  size = 14,
-}: {
-  value?: number | null;
-  size?: number;
-}) {
-  const v = Math.max(0, Math.min(5, Number(value ?? 0)));
-  const stars = new Array(5).fill(0).map((_, i) => (
-    <svg
-      key={i}
-      width={size}
-      height={size}
-      viewBox="0 0 20 20"
-      className="inline-block"
-    >
-      <path
-        d="M10 15l-5.878 3.09 1.123-6.545L.49 6.91l6.561-.954L10 0l2.949 5.956 6.56.954-4.754 4.634 1.122 6.545z"
-        fill={v >= i + 1 ? "currentColor" : "none"}
-        stroke="currentColor"
-      />
-    </svg>
-  ));
-  return <span className="text-yellow-500">{stars}</span>;
-}
-
 // ======================= Component =======================
 export default function RecentActivities() {
   const navigate = useNavigate();
@@ -94,12 +110,17 @@ export default function RecentActivities() {
   const [limit, setLimit] = useState<number>(10);
 
   async function fetchActivities() {
-    setLoading(true);
+    // ถ้าไม่มีข้อมูลเลย ให้ set loading เพื่อโชว์ spinner ตัวใหญ่
+    // แต่ถ้ามีข้อมูลอยู่แล้ว (คือการ Refresh) ไม่ต้อง set loading เป็น true ในแง่ UI เพื่อกันกระพริบ
+    // หรือ set true ได้ แต่ต้องแก้เงื่อนไขข้างล่าง
+
+    setLoading(true); // ยังคง set true เพื่อให้ปุ่ม Refresh หมุน
     setError(null);
     try {
       const API_BASE = import.meta.env.VITE_API_BASE as string;
       const token = localStorage.getItem("auth_token") || "";
-      const url = `${API_BASE}/api/admin/activities/recent.php?limit=${encodeURIComponent(limit)}`;
+      const url = `${API_BASE}/api/admin/activities/recent_1.php?limit=${encodeURIComponent(limit)}`;
+
       const res = await fetch(url, {
         method: "GET",
         headers: { Authorization: token ? `Bearer ${token}` : "" },
@@ -115,8 +136,9 @@ export default function RecentActivities() {
       if (!json?.success)
         throw new Error(json?.message || "โหลดข้อมูลไม่สำเร็จ");
 
-      const arr: Activity[] = json.data?.activities ?? [];
-      setItems(Array.isArray(arr) ? arr : []);
+      setItems(
+        Array.isArray(json.data?.activities) ? json.data.activities : [],
+      );
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -126,254 +148,237 @@ export default function RecentActivities() {
 
   useEffect(() => {
     fetchActivities();
+    const interval = setInterval(() => setItems((prev) => [...prev]), 60000);
+    return () => clearInterval(interval);
   }, [limit]);
 
   const hasData = useMemo(() => items.length > 0, [items]);
 
   return (
-    <div className="mt-8">
-      <div className="mx-auto max-w-screen-xxl">
+    <div className="max-w-screen-xxl mx-auto mt-6">
+      <Card className="shadow-lg">
         {/* Header */}
-        <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 sm:flex-row sm:items-center sm:justify-between dark:border-gray-700">
           <div>
-            <h3 className="text-xl font-semibold text-gray-900 sm:text-2xl dark:text-gray-100">
-              กิจกรรมล่าสุด
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              ประวัติกิจกรรมล่าสุด
             </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              แสดงทุกเหตุการณ์ล่าสุด {limit} รายการ เรียงจากเวลาใหม่สุด
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              ติดตามสถานะ Online, Login, Raid และ Friends
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={limit}
-              onChange={(e) => setLimit(Number(e.target.value) || 10)}
-              className="rounded-lg border-gray-300 p-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+
+          <div className="flex items-center gap-3">
+            <div className="w-32">
+              <Select
+                sizing="sm"
+                value={limit}
+                onChange={(e) => setLimit(Number(e.target.value) || 10)}
+              >
+                {[10, 20, 30, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n} รายการ
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <Button
+              color="gray"
+              size="sm"
+              disabled={loading}
+              onClick={fetchActivities}
+              className="whitespace-nowrap"
             >
-              {[10, 20, 30, 40, 50].map((n) => (
-                <option key={n} value={n}>
-                  {n} รายการ
-                </option>
-              ))}
-            </select>
-            <Button color="light" size="sm" onClick={fetchActivities}>
+              {loading ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : (
+                <HiRefresh className="mr-2 h-4 w-4" />
+              )}
               รีเฟรช
             </Button>
           </div>
         </div>
 
-        {error && (
-          <div className="mb-4">
-            <AlertComponent type="failure" message={error} />
+        {error && <AlertComponent type="failure" message={error} />}
+
+        {/* Loading (Show only initial load) */}
+        {/* แก้ไข: โชว์ Spinner ตัวใหญ่เฉพาะตอนโหลดครั้งแรกและยังไม่มีข้อมูล */}
+        {loading && !hasData && (
+          <div className="flex justify-center py-12">
+            <Spinner size="xl" />
           </div>
         )}
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-            <Spinner />
-            <span>กำลังโหลด...</span>
+        {/* Empty State */}
+        {!loading && !hasData && !error && (
+          <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+            <HiClock className="mb-2 h-10 w-10 opacity-20" />
+            <p>ไม่พบรายการกิจกรรม</p>
           </div>
         )}
 
-        {!loading && !hasData && (
-          <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-500 dark:border-gray-700">
-            ยังไม่มีกิจกรรม
-          </div>
-        )}
+        {/* Data Content */}
+        {/* แก้ไข: ลบ !loading ออก เพื่อให้แสดงตารางตลอดเวลาที่มีข้อมูล แม้จะกด refresh อยู่ */}
+        {hasData && (
+          <div
+            className={
+              loading
+                ? "opacity-50 transition-opacity"
+                : "opacity-100 transition-opacity"
+            }
+          >
+            {/* Desktop Table */}
+            <div className="hidden overflow-x-auto md:block">
+              <Table>
+                <TableHead>
+                  <TableHeadCell className="w-2/12">สถานะ</TableHeadCell>
+                  <TableHeadCell className="w-3/12">รายละเอียด</TableHeadCell>
+                  <TableHeadCell className="w-2/12">เป้าหมาย</TableHeadCell>
+                  <TableHeadCell className="w-1/12">ระบบ</TableHeadCell>
+                  <TableHeadCell className="w-1/12 text-center">
+                    ผ่านมาแล้ว
+                  </TableHeadCell>
+                  <TableHeadCell className="w-1/12 text-center">
+                    เวลา
+                  </TableHeadCell>
+                  <TableHeadCell className="w-1/12 text-center">
+                    โดย
+                  </TableHeadCell>
+                </TableHead>
+                <TableBody className="divide-y">
+                  {items.map((ac, index) => {
+                    const config = getActionConfig(ac.action);
+                    const roomId = extractRoomId(ac.detail);
 
-        {!loading && hasData && (
-          <>
-            {/* มือถือ: การ์ด */}
-            <div className="space-y-3 md:hidden">
-              {items.map((ac) => {
-                const meta = (ac.meta || {}) as Activity["meta"];
+                    return (
+                      <TableRow
+                        key={index}
+                        className="bg-white dark:border-gray-700 dark:bg-gray-800"
+                      >
+                        <TableCell>
+                          <Badge
+                            color={config.color}
+                            icon={config.icon}
+                            className="w-fit rounded-md"
+                          >
+                            {config.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {ac.detail}
+                            </span>
+                            {roomId && (
+                              <Button
+                                size="xs"
+                                color="light"
+                                onClick={() =>
+                                  navigate(`/admin/raidrooms/detail/${roomId}`)
+                                }
+                              >
+                                #{roomId}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {ac.target ? (
+                            <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
+                              <HiUser className="text-gray-400" />
+                              {ac.target}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs font-bold text-gray-500 uppercase">
+                            {ac.source}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-medium whitespace-nowrap text-gray-500">
+                          {timeAgo(ac.time)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs font-medium whitespace-nowrap text-gray-500">
+                          {formatDate(ac.time)}
+                        </TableCell>
+                        <TableCell className="text-xs font-medium whitespace-nowrap text-gray-500">
+                          <div className="mb-2 flex items-center gap-2">
+                            <img
+                              className="h-6 w-6 flex-shrink-0 rounded-full object-cover ring-1 ring-gray-200"
+                              src={ac.avatar || "/default_avatar.png"}
+                            />
+                            <span>{ac.by}</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="flex flex-col gap-3 md:hidden">
+              {items.map((ac, index) => {
+                const config = getActionConfig(ac.action);
+                const roomId = extractRoomId(ac.detail);
                 return (
                   <div
-                    key={`${ac.type}-${ac.id}`}
-                    className="rounded-xl border border-gray-200 p-3 dark:border-gray-700 dark:bg-gray-800"
+                    key={index}
+                    className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
                   >
-                    <div className="mb-1 flex items-center justify-between">
-                      <Badge color={TYPE_COLOR[ac.type] ?? "gray"}>
-                        {ac.type}
+                    <div className="mb-2 flex items-start justify-between">
+                      <Badge color={config.color} icon={config.icon} className="rounded-md">
+                        {config.label}
                       </Badge>
-                      <span className="text-xs text-gray-500">
-                        {formatDate(ac.created_at)}
-                      </span>
-                    </div>
-
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {ac.title || "-"}
-                    </div>
-                    {ac.description && (
-                      <div className="mt-1 text-sm break-words text-gray-700 dark:text-gray-200">
-                        {ac.description}
-                      </div>
-                    )}
-
-                    {/* Extra row for rating/comment if present */}
-                    {(meta?.rating != null || meta?.comment) && (
-                      <div className="mt-2 flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <StarRating value={meta?.rating ?? 0} />
-                          <span className="text-sm font-semibold">
-                            {meta?.rating != null
-                              ? Number(meta?.rating).toFixed(1)
-                              : "-"}
-                          </span>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-gray-500">
+                          {timeAgo(ac.time)}
                         </div>
-                        {meta?.comment && (
-                          <div className="max-w-[60%] truncate text-sm text-gray-600 dark:text-gray-300">
-                            “{meta.comment}”
-                          </div>
-                        )}
+                        <div className="text-xs text-gray-500">
+                          {formatDate(ac.time)}
+                        </div>
                       </div>
-                    )}
-
-                    <div className="mt-2 flex flex-wrap items-center justify-end gap-2">
-                      {meta?.room_id && (
+                    </div>
+                    <div className="mb-2 text-sm text-gray-800 dark:text-gray-200">
+                      {ac.detail}
+                    </div>
+                    <div className="flex items-center justify-between border-t border-gray-100 pt-2 dark:border-gray-700">
+                      {ac.target && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <>
+                            <HiUser /> {ac.target}
+                          </>
+                        </div>
+                      )}
+                      {roomId && (
                         <Button
                           size="xs"
-                          onClick={() =>
-                            navigate(`/admin/raidrooms/detail/${meta.room_id}`)
-                          }
-                        >
-                          ดูห้อง #{meta.room_id}
-                        </Button>
-                      )}
-                      {meta?.actor_id && (
-                        <Button
                           color="light"
-                          size="xs"
                           onClick={() =>
-                            navigate(`/admin/users/detail/${meta.actor_id}`)
+                            navigate(`/admin/raidrooms/detail/${roomId}`)
                           }
                         >
-                          ผู้กระทำ
+                          ห้อง #{roomId}
                         </Button>
                       )}
-                      {meta?.target_id && (
-                        <Button
-                          color="gray"
-                          size="xs"
-                          onClick={() =>
-                            navigate(`/admin/users/detail/${meta.target_id}`)
-                          }
-                        >
-                          เป้าหมาย
-                        </Button>
-                      )}
+                      <div className="mb-2 flex items-center gap-2 text-xs font-medium whitespace-nowrap text-gray-500">
+                        <img
+                          className="h-6 w-6 flex-shrink-0 rounded-full object-cover ring-1 ring-gray-200"
+                          src={ac.avatar || "/default_avatar.png"}
+                        />
+                        <span>{ac.by}</span>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {/* เดสก์ท็อป: ตาราง */}
-            <div className="hidden overflow-x-auto md:block">
-              <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-                <Table className="min-w-[980px] table-fixed text-sm">
-                  <TableHead className="sticky top-0 z-10 bg-white/90 backdrop-blur dark:bg-gray-800/90">
-                    <TableRow>
-                      <TableHeadCell className="w-[12%]">ประเภท</TableHeadCell>
-                      <TableHeadCell className="w-[26%]">หัวข้อ</TableHeadCell>
-                      <TableHeadCell>รายละเอียด</TableHeadCell>
-                      <TableHeadCell className="w-[18%]">ข้อมูล</TableHeadCell>
-                      <TableHeadCell className="w-[18%]">เวลา</TableHeadCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody className="divide-y">
-                    {items.map((ac) => {
-                      const meta = (ac.meta || {}) as Activity["meta"];
-                      return (
-                        <TableRow
-                          key={`${ac.type}-${ac.id}`}
-                          className="bg-white dark:border-gray-700 dark:bg-gray-800"
-                        >
-                          <TableCell className="whitespace-nowrap">
-                            <Badge color={TYPE_COLOR[ac.type] ?? "gray"}>
-                              {ac.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <div className="truncate font-medium">
-                              {ac.title || "-"}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="truncate">
-                              {ac.description || "-"}
-                            </div>
-                            {(meta?.rating != null || meta?.comment) && (
-                              <div className="mt-1 flex items-center gap-2">
-                                <StarRating value={meta?.rating ?? 0} />
-                                <span className="font-semibold">
-                                  {meta?.rating != null
-                                    ? Number(meta?.rating).toFixed(1)
-                                    : "-"}
-                                </span>
-                                {meta?.comment && (
-                                  <span className="truncate text-gray-500">
-                                    “{meta.comment}”
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {meta?.room_id && (
-                                <Button
-                                  size="xs"
-                                  onClick={() =>
-                                    navigate(
-                                      `/admin/raidrooms/detail/${meta.room_id}`,
-                                    )
-                                  }
-                                >
-                                  ห้อง #{meta.room_id}
-                                </Button>
-                              )}
-                              {meta?.actor_id && (
-                                <Button
-                                  color="light"
-                                  size="xs"
-                                  onClick={() =>
-                                    navigate(
-                                      `/admin/users/detail/${meta.actor_id}`,
-                                    )
-                                  }
-                                >
-                                  ผู้กระทำ
-                                </Button>
-                              )}
-                              {meta?.target_id && (
-                                <Button
-                                  color="gray"
-                                  size="xs"
-                                  onClick={() =>
-                                    navigate(
-                                      `/admin/users/detail/${meta.target_id}`,
-                                    )
-                                  }
-                                >
-                                  เป้าหมาย
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {formatDate(ac.created_at)}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          </>
+          </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
