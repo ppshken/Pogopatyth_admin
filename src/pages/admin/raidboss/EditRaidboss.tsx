@@ -254,10 +254,6 @@ export default function EditRaidboss() {
     }
   };
 
-  const handleChange = (name: keyof FormState, value: any) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   function change<K extends keyof FormState>(k: K, v: FormState[K]) {
     setForm((s) => ({ ...s, [k]: v }));
   }
@@ -337,7 +333,7 @@ export default function EditRaidboss() {
         cp_boost_max: form.cp_boost_max ? Number(form.cp_boost_max) : null,
         start_date: fromInputValue(form.start_date),
         end_date: fromInputValue(form.end_date),
-        maximum: form.maximum,
+        maximum: form.maximum ? Number(form.maximum) : null,
       };
 
       let res: Response;
@@ -443,7 +439,7 @@ export default function EditRaidboss() {
           <div className="space-y-4 md:col-span-2">
             {/* Card: Basic Info */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-cyan-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
                   ข้อมูลพื้นฐาน
@@ -480,7 +476,7 @@ export default function EditRaidboss() {
                     <TextInput
                       id="pokemon_id"
                       value={form.pokemon_id}
-                      readOnly
+                      onChange={(e) => change("pokemon_id", e.target.value)}
                       color="gray"
                     />
                   </div>
@@ -490,7 +486,7 @@ export default function EditRaidboss() {
                     <TextInput
                       id="pokemon_name"
                       value={form.pokemon_name}
-                      readOnly
+                      onChange={(e) => change("pokemon_name", e.target.value)}
                       color="gray"
                     />
                   </div>
@@ -558,7 +554,7 @@ export default function EditRaidboss() {
 
             {/* Card: Combat Power Stats */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-orange-500 to-red-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
                   CP Stats
@@ -609,7 +605,7 @@ export default function EditRaidboss() {
           <div className="space-y-4">
             {/* Card: Schedule */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-purple-500 to-pink-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
                   ช่วงเวลา
@@ -642,9 +638,9 @@ export default function EditRaidboss() {
 
             {/* Card: Image */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-teal-500 to-cyan-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
-                <div className="mb-3 flex items-center gap-2">
+                <div className="mb-3 flex items-center gap-2 text-gray-500">
                   <Button
                     size="xs"
                     color={form.imageMode === "url" ? "info" : "light"}

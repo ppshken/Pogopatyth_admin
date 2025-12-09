@@ -21,6 +21,12 @@ import {
   HiUserAdd,
   HiStatusOnline,
   HiCube,
+  HiOutlineDocumentAdd,
+  HiOutlineCheck,
+  HiOutlineRefresh,
+  HiReply,
+  HiUsers,
+  HiX,
 } from "react-icons/hi";
 import { AlertComponent } from "../component/alert";
 import { formatDate } from "../component/functions/formatDate";
@@ -72,13 +78,25 @@ const getActionConfig = (action: string) => {
     case "join":
       return { color: "indigo", icon: HiCube, label: "เข้าร่วมห้อง" };
     case "create":
-      return { color: "success", icon: HiCube, label: "สร้างห้อง" };
+      return {
+        color: "success",
+        icon: HiOutlineDocumentAdd,
+        label: "สร้างห้อง",
+      };
+    case "cancel":
+      return { color: "failure", icon: HiX, label: "ยกเลิกห้อง" };
+    case "review":
+      return { color: "success", icon: HiOutlineCheck, label: "รีวืว" };
+    case "update":
+      return { color: "info", icon: HiOutlineRefresh, label: "อัปเดต" };
     case "invite":
-      return { color: "purple", icon: HiCube, label: "เชิญเพื่อน" };
+      return { color: "purple", icon: HiReply, label: "เชิญเพื่อน" };
     case "addfriend":
       return { color: "pink", icon: HiUserAdd, label: "เพิ่มเพื่อน" };
     case "acceptfriend":
-      return { color: "warning", icon: HiUserAdd, label: "รับเพื่อน" };
+      return { color: "warning", icon: HiUsers, label: "รับเพื่อน" };
+    case "edit_profile":
+      return { color: "warning", icon: HiUserAdd, label: "แก้ไขโปรไฟล์" };
     default:
       return { color: "light", icon: HiClock, label: action };
   }
@@ -119,7 +137,7 @@ export default function RecentActivities() {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE as string;
       const token = localStorage.getItem("auth_token") || "";
-      const url = `${API_BASE}/api/admin/activities/recent_1.php?limit=${encodeURIComponent(limit)}`;
+      const url = `${API_BASE}/api/admin/activities/recent.php?limit=${encodeURIComponent(limit)}`;
 
       const res = await fetch(url, {
         method: "GET",
@@ -171,7 +189,7 @@ export default function RecentActivities() {
           <div className="flex items-center gap-3">
             <div className="w-32">
               <Select
-                sizing="sm"
+                sizing="md"
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value) || 10)}
               >
@@ -182,13 +200,7 @@ export default function RecentActivities() {
                 ))}
               </Select>
             </div>
-            <Button
-              color="gray"
-              size="sm"
-              disabled={loading}
-              onClick={fetchActivities}
-              className="whitespace-nowrap"
-            >
+            <Button color="light" disabled={loading} onClick={fetchActivities}>
               {loading ? (
                 <Spinner size="sm" className="mr-2" />
               ) : (
@@ -235,15 +247,9 @@ export default function RecentActivities() {
                   <TableHeadCell className="w-3/12">รายละเอียด</TableHeadCell>
                   <TableHeadCell className="w-2/12">เป้าหมาย</TableHeadCell>
                   <TableHeadCell className="w-1/12">ระบบ</TableHeadCell>
-                  <TableHeadCell className="w-1/12 text-center">
-                    ผ่านมาแล้ว
-                  </TableHeadCell>
-                  <TableHeadCell className="w-1/12 text-center">
-                    เวลา
-                  </TableHeadCell>
-                  <TableHeadCell className="w-1/12 text-center">
-                    โดย
-                  </TableHeadCell>
+                  <TableHeadCell className="w-1/12">ผ่านมาแล้ว</TableHeadCell>
+                  <TableHeadCell className="w-1/12">เวลา</TableHeadCell>
+                  <TableHeadCell className="w-1/12">โดย</TableHeadCell>
                 </TableHead>
                 <TableBody className="divide-y">
                   {items.map((ac, index) => {
@@ -297,10 +303,10 @@ export default function RecentActivities() {
                             {ac.source}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right text-xs font-medium whitespace-nowrap text-gray-500">
+                        <TableCell className="text-xs font-medium whitespace-nowrap text-gray-500">
                           {timeAgo(ac.time)}
                         </TableCell>
-                        <TableCell className="text-right text-xs font-medium whitespace-nowrap text-gray-500">
+                        <TableCell className="text-xs font-medium whitespace-nowrap text-gray-500">
                           {formatDate(ac.time)}
                         </TableCell>
                         <TableCell className="text-xs font-medium whitespace-nowrap text-gray-500">
@@ -330,7 +336,11 @@ export default function RecentActivities() {
                     className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800"
                   >
                     <div className="mb-2 flex items-start justify-between">
-                      <Badge color={config.color} icon={config.icon} className="rounded-md">
+                      <Badge
+                        color={config.color}
+                        icon={config.icon}
+                        className="rounded-md"
+                      >
                         {config.label}
                       </Badge>
                       <div className="text-right">

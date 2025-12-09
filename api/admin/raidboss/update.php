@@ -52,9 +52,9 @@ try {
     $cp_boost_min   = isset($input["cp_boost_min"])  ? intval($input["cp_boost_min"])  : null;
     $cp_boost_max   = isset($input["cp_boost_max"])  ? intval($input["cp_boost_max"])  : null;
     $special        = isset($input["special"]) ? boolval($input["special"]) : false;
-    $maximum        = intval($data['maximum'] ?? 10);
+    $maximum        = isset($input["maximum"])  ? intval($input["maximum"])  : null;
 
-    if (!$id || !$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date  || !$end_date) {
+    if (!$id || !$pokemon_name || !$pokemon_image || !$pokemon_tier || !$start_date  || !$end_date || !$type || !$maximum) {
         throw new Exception("กรุณากรอก ข้อมูลให้ครบถ้วน");
     }
 

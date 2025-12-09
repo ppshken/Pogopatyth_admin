@@ -68,10 +68,10 @@ try {
     // แนะนำ: คอลัมน์ในตารางควรเป็น cp_boost_min/cp_boost_max (ไม่ใช่ cp_boots_*)
     $sql = "INSERT INTO raid_boss
         (pokemon_id, pokemon_name, pokemon_image, pokemon_tier, start_date, end_date,
-         cp_normal_min, cp_normal_max, cp_boost_min, cp_boost_max, created_at)
+         cp_normal_min, cp_normal_max, cp_boost_min, cp_boost_max, maximum, created_at)
         VALUES
         (:pokemon_id, :pokemon_name, :pokemon_image, :pokemon_tier, :start_date, :end_date,
-         :cp_normal_min, :cp_normal_max, :cp_boost_min, :cp_boost_max, NOW())";
+         :cp_normal_min, :cp_normal_max, :cp_boost_min, :cp_boost_max, 10, NOW())";
 
     $stmtInsert = $pdo->prepare($sql);
 

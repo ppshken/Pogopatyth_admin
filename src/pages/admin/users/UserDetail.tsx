@@ -10,13 +10,22 @@ import {
   TableHeadCell,
   TableRow,
   Avatar, // ใช้สำหรับรูปเพื่อน
-  Card, // ใช้ครอบ
 } from "flowbite-react";
 import {
   HiExclamationCircle,
   HiFlag,
   HiShieldCheck,
   HiUsers, // ไอคอนเพื่อน
+  HiClock,
+  HiLogin,
+  HiUserAdd,
+  HiStatusOnline,
+  HiCube,
+  HiOutlineDocumentAdd,
+  HiOutlineCheck,
+  HiOutlineRefresh,
+  HiReply,
+  HiX,
 } from "react-icons/hi";
 import { AlertComponent } from "../../../component/alert";
 import { formatDate } from "../../../component/functions/formatDate";
@@ -50,6 +59,7 @@ type UserStats = {
 // 3. Reviews Received
 type ReviewItem = {
   id: number;
+  room_id: number;
   rating: number;
   comment?: string | null;
   created_at: string;
@@ -126,6 +136,30 @@ const TEAM_COLORS: Record<string, string> = {
   Mystic: "text-blue-500 bg-blue-50 border-blue-200",
   Valor: "text-red-500 bg-red-50 border-red-200",
 };
+
+function timeAgo(dateString: string): string {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+
+  if (diffSec < 60) return `${Math.max(0, diffSec)} วินาที ที่แล้ว`;
+
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} นาที ที่แล้ว`;
+
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} ชั่วโมง ที่แล้ว`;
+
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 30) return `${diffDay} วันที่แล้ว`;
+
+  const diffMonth = Math.floor(diffDay / 30);
+  if (diffMonth < 12) return `${diffMonth} เดือนที่แล้ว`;
+
+  const diffYear = Math.floor(diffDay / 365);
+  return `${diffYear} ปีที่แล้ว`;
+}
 
 function hashString(s: string): number {
   let h = 0;
@@ -226,6 +260,39 @@ export default function UserDetail() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ApiData | null>(null);
 
+  const getActionConfig = (action: string) => {
+    switch (action) {
+      case "login":
+        return { color: "info", icon: HiLogin, label: "เข้าสู่ระบบ" };
+      case "online_lasted":
+        return { color: "gray", icon: HiStatusOnline, label: "ออนไลน์" };
+      case "join":
+        return { color: "indigo", icon: HiCube, label: "เข้าร่วมห้อง" };
+      case "create":
+        return {
+          color: "success",
+          icon: HiOutlineDocumentAdd,
+          label: "สร้างห้อง",
+        };
+      case "cancel":
+        return { color: "failure", icon: HiX, label: "ยกเลิกห้อง" };
+      case "review":
+        return { color: "success", icon: HiOutlineCheck, label: "รีวืว" };
+      case "update":
+        return { color: "info", icon: HiOutlineRefresh, label: "อัปเดต" };
+      case "invite":
+        return { color: "purple", icon: HiReply, label: "เชิญเพื่อน" };
+      case "addfriend":
+        return { color: "pink", icon: HiUserAdd, label: "เพิ่มเพื่อน" };
+      case "acceptfriend":
+        return { color: "warning", icon: HiUsers, label: "รับเพื่อน" };
+      case "edit_profile":
+        return { color: "warning", icon: HiUserAdd, label: "แก้ไขโปรไฟล์" };
+      default:
+        return { color: "light", icon: HiClock, label: action };
+    }
+  };
+
   async function fetchDetail() {
     if (!id) {
       setError("ไม่พบรหัสผู้ใช้");
@@ -262,14 +329,6 @@ export default function UserDetail() {
   useEffect(() => {
     fetchDetail();
   }, [id]);
-
-  const TimelineColor: Record<string, string> = {
-    join: "info",
-    create: "success",
-    invite: "warning",
-    review: "purple",
-    login: "gray",
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-3 sm:p-4 dark:bg-gray-900">
@@ -449,8 +508,63 @@ export default function UserDetail() {
                 </h4>
                 <Badge color="gray">{data.reviews_received.length}</Badge>
               </div>
-              <div className="overflow-x-auto">
-                <Table hoverable>
+
+              {/* Mobile View */}
+              <div className="block space-y-3 p-4 md:hidden">
+                {data.reviews_received.length === 0 ? (
+                  <div className="py-6 text-center text-gray-500">
+                    ไม่มีข้อมูลรีวิว
+                  </div>
+                ) : (
+                  data.reviews_received.map((rv) => (
+                    <div
+                      key={rv.id}
+                      className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <StarRating value={rv.rating} size={14} />
+                          <span className="font-bold text-gray-900 dark:text-white">
+                            {rv.rating}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(rv.created_at)}
+                        </span>
+                      </div>
+                      {rv.comment && (
+                        <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">
+                          {rv.comment}
+                        </p>
+                      )}
+                      <div className="flex flex-col gap-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-500">โดย:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {rv.reviewer_name || "Anonymous"}
+                          </span>
+                        </div>
+                        {rv.room_boss && (
+                          <Button
+                            color="light"
+                            className="w-fit"
+                            size="xs"
+                            onClick={() =>
+                              navigate(`/admin/raidrooms/detail/${rv.room_id}`)
+                            }
+                          >
+                            {rv.room_boss}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Desktop View */}
+              <div className="hidden overflow-x-auto md:block">
+                <Table>
                   <TableHead>
                     <TableHeadCell className="w-[150px]">คะแนน</TableHeadCell>
                     <TableHeadCell>ความคิดเห็น</TableHeadCell>
@@ -487,9 +601,18 @@ export default function UserDetail() {
                           </TableCell>
                           <TableCell>
                             {rv.room_boss ? (
-                              <Badge color="indigo" className="w-fit">
+                              <Button
+                                color="light"
+                                className="w-fit"
+                                size="xs"
+                                onClick={() =>
+                                  navigate(
+                                    `/admin/raidrooms/detail/${rv.room_id}`,
+                                  )
+                                }
+                              >
                                 {rv.room_boss}
-                              </Badge>
+                              </Button>
                             ) : (
                               "-"
                             )}
@@ -650,24 +773,27 @@ export default function UserDetail() {
 
               {/* Mobile View */}
               <div className="block space-y-3 p-4 md:hidden">
-                {data.timeline.map((ac, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700"
-                  >
-                    <div className="mb-2 flex items-start justify-between">
-                      <Badge color={TimelineColor[ac.action] || "gray"}>
-                        {ac.action}
-                      </Badge>
-                      <span className="text-xs text-gray-500">
-                        {formatDate(ac.time)}
-                      </span>
+                {data.timeline.map((ac, idx) => {
+                  const config = getActionConfig(ac.action);
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700"
+                    >
+                      <div className="mb-2 flex items-start justify-between">
+                        <Badge color={config.color} className="w-fit">
+                          {config.label}
+                        </Badge>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(ac.time)}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {ac.detail}
+                      </p>
                     </div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {ac.detail}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Desktop View */}
@@ -676,8 +802,9 @@ export default function UserDetail() {
                   <TableHead>
                     <TableHeadCell>กิจกรรม</TableHeadCell>
                     <TableHeadCell>รายละเอียด</TableHeadCell>
-                    <TableHeadCell>Target/Ref</TableHeadCell>
-                    <TableHeadCell className="text-right">เวลา</TableHeadCell>
+                    <TableHeadCell>เป้าหมาย</TableHeadCell>
+                    <TableHeadCell>ผ่านมา</TableHeadCell>
+                    <TableHeadCell>เวลา</TableHeadCell>
                   </TableHead>
                   <TableBody className="divide-y">
                     {data.timeline.length === 0 ? (
@@ -687,34 +814,37 @@ export default function UserDetail() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      data.timeline.map((ac, idx) => (
-                        <TableRow
-                          key={idx}
-                          className="bg-white dark:bg-gray-800"
-                        >
-                          <TableCell className="whitespace-nowrap">
-                            <Badge
-                              color={TimelineColor[ac.action] || "gray"}
-                              className="w-fit"
-                            >
-                              {ac.action}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-medium text-gray-700 dark:text-gray-300">
-                              {ac.detail}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="rounded bg-gray-100 px-2 py-1 font-mono text-xs text-gray-500 dark:bg-gray-700">
-                              {ac.target || "-"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right text-xs whitespace-nowrap text-gray-500">
-                            {formatDate(ac.time)}
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      data.timeline.map((ac, idx) => {
+                        const config = getActionConfig(ac.action);
+                        return (
+                          <TableRow
+                            key={idx}
+                            className="bg-white dark:bg-gray-800"
+                          >
+                            <TableCell className="whitespace-nowrap">
+                              <Badge color={config.color} className="w-fit">
+                                {config.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <span className="font-medium text-gray-700 dark:text-gray-300">
+                                {ac.detail}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="rounded bg-gray-100 px-2 py-1 font-mono text-xs text-gray-500 dark:bg-gray-700">
+                                {ac.target || "-"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs whitespace-nowrap text-gray-500">
+                              {timeAgo(ac.time)}
+                            </TableCell>
+                            <TableCell className="text-xs whitespace-nowrap text-gray-500">
+                              {formatDate(ac.time)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>

@@ -175,19 +175,6 @@ try {
         ];
     }
 
-    // 5.3 Raid Create History (จากตาราง raid_rooms โดยตรง)
-    $stLog3 = $pdo->prepare("SELECT id, boss, created_at FROM raid_rooms WHERE owner_id = :uid ORDER BY created_at DESC LIMIT 50");
-    $stLog3->execute([":uid" => $userId]);
-    while($row = $stLog3->fetch(PDO::FETCH_ASSOC)) {
-        $timeline[] = [
-            'source' => 'host',
-            'action' => 'create_room',
-            'detail' => "สร้างห้องบอส " . $row['boss'],
-            'target' => "Room ID: " . $row['id'],
-            'time'   => $row['created_at']
-        ];
-    }
-
     // เรียงลำดับ Timeline ตามเวลาล่าสุด
     usort($timeline, function($a, $b) {
         return strtotime($b['time']) - strtotime($a['time']);

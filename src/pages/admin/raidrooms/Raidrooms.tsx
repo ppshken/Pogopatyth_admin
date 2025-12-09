@@ -12,6 +12,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownDivider,
+  Select,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { ModalComponent } from "../../../component/modal";
@@ -252,7 +253,7 @@ export default function Raidrooms() {
 
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xxl">
+      <div className="max-w-screen-xxl mx-auto">
         {/* Header */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -288,16 +289,18 @@ export default function Raidrooms() {
               <label className="text-sm text-gray-600 dark:text-gray-300">
                 แสดงต่อหน้า:
               </label>
-              <select
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
+              <div className="w-20">
+                <Select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  sizing="md"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
@@ -327,10 +330,10 @@ export default function Raidrooms() {
               <label className="text-sm text-gray-600 dark:text-gray-300">
                 บอส:
               </label>
-              <select
-                className="rounded-lg border px-2 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              <Select
                 value={filterBoss}
                 onChange={(e) => setFilterBoss(e.target.value)}
+                sizing="md"
               >
                 <option value="">ทั้งหมด</option>
                 {allBosses.map((boss) => (
@@ -338,24 +341,26 @@ export default function Raidrooms() {
                     {boss}
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             {/* ฟิลเตอร์สถานะ */}
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600 dark:text-gray-300">
                 สถานะ:
               </label>
-              <select
-                className="rounded-lg border p-2 px-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="">ทั้งหมด</option>
-                <option value="active">active</option>
-                <option value="invited">invited</option>
-                <option value="canceled">canceled</option>
-                <option value="closed">closed</option>
-              </select>
+              <div className="w-24">
+                <Select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  sizing="md"
+                >
+                  <option value="">ทั้งหมด</option>
+                  <option value="active">active</option>
+                  <option value="invited">invited</option>
+                  <option value="canceled">canceled</option>
+                  <option value="closed">closed</option>
+                </Select>
+              </div>
             </div>
             {/* ปุ่มรีเซ็ตฟิลเตอร์ */}
             <div>
@@ -544,19 +549,21 @@ export default function Raidrooms() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge
-                          color={
-                            r.member_total === r.max_members
-                              ? "success"
-                              : "info"
-                          }
-                        >
-                          {r.member_total} / {r.max_members}
-                        </Badge>
+                        <div className="flex flex-wrap">
+                          <Badge
+                            color={
+                              r.member_total === r.max_members
+                                ? "success"
+                                : "info"
+                            }
+                          >
+                            {r.member_total} / {r.max_members}
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap">
                           <Badge
                             size="sm"
                             color={statusColor[r.status] ?? "gray"}
@@ -603,9 +610,11 @@ export default function Raidrooms() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge size="sm" color={cd.color}>
-                          {cd.text}
-                        </Badge>
+                        <div className="flex flex-wrap">
+                          <Badge size="sm" color={cd.color}>
+                            {cd.text}
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">

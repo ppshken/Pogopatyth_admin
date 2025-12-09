@@ -12,7 +12,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownDivider,
-  Avatar,
+  Select,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { ModalComponent } from "../../../component/modal";
@@ -120,6 +120,7 @@ export default function Users() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showAlert, setShowAlert] = useState(false);
@@ -173,7 +174,7 @@ export default function Users() {
         plan_expires_at: u.plan_expires_at ?? null,
         created_at: u.created_at ?? null,
       }));
-
+      setTotal(body.pagination?.total);
       setUsers(normalized);
       setTotalPages(Math.max(1, Number(body.pagination?.total_pages) || 1));
     } catch (err) {
@@ -283,16 +284,18 @@ export default function Users() {
               <label className="text-sm text-gray-600 dark:text-gray-300">
                 แสดงต่อหน้า:
               </label>
-              <select
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
+              <div className="w-20">
+                <Select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  sizing="md"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </Select>
+              </div>
             </div>
 
             <Button
@@ -315,6 +318,11 @@ export default function Users() {
             <AlertComponent message={error} type="failure" />
           </div>
         )}
+
+        {/* จำนวนทั้งหมด */}
+        <div className="text-sm text-gray-500 dark:text-gray-400 mb-4 flex justify-end">
+          จำนวนทั้งหมด {total} รายการ
+        </div>
 
         {/* Mobile: Cards */}
         <div className="space-y-3 md:hidden">

@@ -13,6 +13,7 @@ import {
   DropdownItem,
   DropdownDivider,
   TextInput,
+  Select,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { ModalComponent } from "../../../component/modal";
@@ -306,16 +307,18 @@ export default function RaidBosses() {
               <label className="text-sm text-gray-600 dark:text-gray-300">
                 แสดงต่อหน้า:
               </label>
-              <select
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
+              <div className="w-20">
+                <Select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  sizing="md"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </Select>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -395,6 +398,7 @@ export default function RaidBosses() {
 
               <Button
                 color="green"
+                className="w-20"
                 onClick={async () => {
                   if (extMons.length === 0)
                     return setExtError("ยังไม่มีข้อมูลสำหรับนำเข้า");
@@ -491,6 +495,11 @@ export default function RaidBosses() {
             </div>
           </div>
         )}
+
+        {/* จำนวนทั้งหมด */}
+        <div className="mb-4 flex justify-end text-sm text-gray-500 dark:text-gray-400">
+          จำนวนทั้งหมด {total} รายการ
+        </div>
 
         {/* Mobile cards */}
         <div className="space-y-3 md:hidden">
@@ -682,9 +691,14 @@ export default function RaidBosses() {
                       </TableCell>
 
                       <TableCell>
-                        <Badge size="sm" color={active ? "success" : "failure"}>
-                          {active ? "ใช้งาน" : "ไม่ใช้งาน"}
-                        </Badge>
+                        <div className="flex flex-wrap gap-1">
+                          <Badge
+                            size="sm"
+                            color={active ? "success" : "failure"}
+                          >
+                            {active ? "ใช้งาน" : "ไม่ใช้งาน"}
+                          </Badge>
+                        </div>
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">
@@ -733,11 +747,6 @@ export default function RaidBosses() {
             onClose={handleCloseDelete}
           />
         )}
-
-        {/* Summary */}
-        <div className="mt-3 text-right text-xs text-gray-500">
-          รวมทั้งหมด {total} รายการ
-        </div>
       </div>
     </div>
   );

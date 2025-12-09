@@ -55,15 +55,18 @@ try {
 
     // ✅ ดึงข้อมูลผู้ใช้
     $sql = "SELECT 
-            id,
-            report_type,
-            target_id,
-            reporter_id,
-            reason,
-            status,
-            created_at,
-            updated_at
-            FROM reports
+            rp.id,
+            rp.report_type,
+            rp.target_id,
+            rp.reporter_id,
+            rp.reason,
+            rp.status,
+            rp.created_at,
+            rp.updated_at,
+            u.username,
+            u. avatar
+            FROM reports rp
+            LEFT JOIN users u ON u.id = rp.reporter_id
             $whereSql
             ORDER BY created_at DESC
             LIMIT $limit OFFSET $offset";

@@ -5,6 +5,7 @@ import { AlertComponent } from "../../component/alert";
 import { getErrorMessage } from "../../component/functions/getErrorMessage";
 import DashboardUserLeaders from "../../component/DashboardUserLeaders";
 import RecentActivities from "../../component/RecentActivities";
+import { HiRefresh } from "react-icons/hi";
 
 /* ---------- Types ---------- */
 type DashboardData = {
@@ -57,7 +58,7 @@ function SkeletonCard() {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="h-1 w-full bg-gradient-to-r from-gray-300 via-gray-200 to-gray-300 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700" />
-      <div className="p-4 animate-pulse">
+      <div className="animate-pulse p-4">
         <div className="h-4 w-24 rounded bg-gray-200 dark:bg-gray-700" />
         <div className="mt-2 h-7 w-28 rounded bg-gray-200 dark:bg-gray-700" />
         <div className="mt-2 h-3 w-20 rounded bg-gray-200 dark:bg-gray-700" />
@@ -115,7 +116,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xxl">
+      <div className="max-w-screen-xxl mx-auto">
         {/* Header */}
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -148,7 +149,11 @@ export default function Dashboard() {
               disabled={refreshing}
               aria-busy={refreshing}
             >
-              {refreshing && <Spinner size="sm" className="mr-2" />}
+              {refreshing ? (
+                <Spinner size="sm" className="mr-2" />
+              ) : (
+                <HiRefresh className="mr-2 h-4 w-4" />
+              )}
               รีเฟรช
             </Button>
           </div>

@@ -198,10 +198,6 @@ export default function AddRaidboss() {
     }
   };
 
-  const handleChange = (name: keyof FormState, value: any) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -380,7 +376,7 @@ export default function AddRaidboss() {
           <div className="space-y-4 md:col-span-2">
             {/* Card: Basic Info */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-cyan-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
                   ข้อมูลพื้นฐาน
@@ -497,7 +493,7 @@ export default function AddRaidboss() {
 
             {/* Card: Combat Power Stats */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-orange-500 to-red-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
                   CP Stats (Optional)
@@ -548,7 +544,7 @@ export default function AddRaidboss() {
           <div className="space-y-4">
             {/* Card: Schedule */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-purple-500 to-pink-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <h3 className="mb-4 font-semibold text-gray-900 dark:text-white">
                   ช่วงเวลา
@@ -581,7 +577,7 @@ export default function AddRaidboss() {
 
             {/* Card: Image */}
             <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
-              <div className="h-1 w-full bg-gradient-to-r from-teal-500 to-cyan-500" />
+              <div className="h-1 w-full" />
               <div className="p-4">
                 <div className="mb-3 flex items-center gap-2">
                   <Button

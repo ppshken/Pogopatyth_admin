@@ -16,6 +16,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Select,
 } from "flowbite-react";
 import { useNavigate } from "react-router";
 import { AlertComponent } from "../../../component/alert";
@@ -195,16 +196,18 @@ export default function Notifications() {
               <label className="text-sm text-gray-600 dark:text-gray-300">
                 แสดงต่อหน้า:
               </label>
-              <select
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
+              <div className="w-20">
+                <Select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  sizing="md"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </Select>
+              </div>
             </div>
 
             <Button

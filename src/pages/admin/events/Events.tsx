@@ -11,6 +11,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownDivider,
+  Select,
 } from "flowbite-react";
 
 // Component เหล่านี้สมมติว่ามีอยู่แล้วตามโค้ดต้นฉบับของคุณ
@@ -206,7 +207,7 @@ export default function Events() {
   /* ---------- UI ---------- */
   return (
     <div className="p-4">
-      <div className="mx-auto max-w-screen-xxl">
+      <div className="max-w-screen-xxl mx-auto">
         {/* Header */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -243,15 +244,18 @@ export default function Events() {
               <label className="hidden text-sm text-gray-600 sm:block dark:text-gray-300">
                 แสดง:
               </label>
-              <select
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="rounded-lg border px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-              </select>
+              <div className="w-20">
+                <Select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value))}
+                  sizing="md"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </Select>
+              </div>
             </div>
 
             {/* Create Button */}
@@ -277,6 +281,11 @@ export default function Events() {
             <AlertComponent message={error} type="failure" />
           </div>
         )}
+
+        {/* จำนวนทั้งหมด */}
+        <div className="mb-4 flex justify-end text-sm text-gray-500 dark:text-gray-400">
+          จำนวนทั้งหมด {total} รายการ
+        </div>
 
         {/* Mobile Cards View */}
         <div className="space-y-3 md:hidden">
@@ -410,11 +419,6 @@ export default function Events() {
             totalPages={totalPages}
             onPageChange={(p) => setPage(p)}
           />
-        </div>
-
-        {/* Summary */}
-        <div className="mt-3 text-right text-xs text-gray-500">
-          รวมทั้งหมด {total} รายการ
         </div>
 
         {/* Modal ยืนยันลบ */}
