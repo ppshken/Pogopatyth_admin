@@ -27,6 +27,7 @@ import {
   HiReply,
   HiUsers,
   HiX,
+  HiInformationCircle,
 } from "react-icons/hi";
 import { AlertComponent } from "../component/alert";
 import { formatDate } from "../component/functions/formatDate";
@@ -85,6 +86,8 @@ const getActionConfig = (action: string) => {
       };
     case "cancel":
       return { color: "failure", icon: HiX, label: "ยกเลิกห้อง" };
+    case "leave":
+      return { color: "failure", icon: HiX, label: "ออกจากห้อง" };
     case "review":
       return { color: "success", icon: HiOutlineCheck, label: "รีวืว" };
     case "update":
@@ -97,6 +100,8 @@ const getActionConfig = (action: string) => {
       return { color: "warning", icon: HiUsers, label: "รับเพื่อน" };
     case "edit_profile":
       return { color: "warning", icon: HiUserAdd, label: "แก้ไขโปรไฟล์" };
+    case "report":
+      return { color: "pink", icon: HiInformationCircle, label: "รายงาน" };
     default:
       return { color: "light", icon: HiClock, label: action };
   }
@@ -290,8 +295,7 @@ export default function RecentActivities() {
                         </TableCell>
                         <TableCell>
                           {ac.target ? (
-                            <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
-                              <HiUser className="text-gray-400" />
+                            <div className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">                            
                               {ac.target}
                             </div>
                           ) : (

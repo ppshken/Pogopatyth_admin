@@ -163,7 +163,7 @@ export default function RaidroomsDetail() {
     if (!start) return { text: "-", color: "gray" as const };
     const diff = start.getTime() - now;
     if (diff <= 0 || status === "canceled" || status === "closed")
-      return { text: "time out", color: "red" as const };
+      return { text: "หมดเวลา", color: "red" as const };
     const color =
       diff <= 5 * 60 * 1000
         ? ("warning" as const)

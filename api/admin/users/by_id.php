@@ -108,7 +108,13 @@ try {
     $stReported->execute([":uid" => $userId]);
     $reportsReceived = $stReported->fetchAll(PDO::FETCH_ASSOC);
 
-    // 3.2 ไปรายงานคนอื่น (As Reporter)
+    // 3.2 จำนวน Report ที่ Pending
+    $sqlReported = "SELECT * FROM reports WHERE target_id = :uid AND status = 'pending' ORDER BY created_at DESC";
+    $stReported = $pdo->prepare($sqlReported);
+    $stReported->execute([":uid" => $userId]);
+    $reportsReceivedPending = $stReported->fetchAll(PDO::FETCH_ASSOC);
+
+    // 3.3 ไปรายงานคนอื่น (As Reporter)
     $sqlReporter = "SELECT * FROM reports WHERE reporter_id = :uid ORDER BY created_at DESC";
     $stReporter = $pdo->prepare($sqlReporter);
     $stReporter->execute([":uid" => $userId]);
@@ -213,7 +219,8 @@ try {
         ],
         "reports" => [
             "received" => $reportsReceived, // โดนใครแจ้งบ้าง
-            "written" => $reportsWritten    // ไปแจ้งใครบ้าง
+            "written" => $reportsWritten,    // ไปแจ้งใครบ้าง
+            "pending" => $reportsReceivedPending // จำนวน report ที่ยังไม่ได้ตรวจสอบ หรือ แก้ไข
         ],
         "reviews_received" => $listReviewsReceived, // รายการรีวิวที่ได้รับ
         "timeline" => array_slice($timeline, 0, 100), // เอาแค่ 100 รายการล่าสุด

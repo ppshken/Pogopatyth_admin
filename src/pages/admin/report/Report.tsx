@@ -376,7 +376,7 @@ export default function Reports() {
                       <TableCell className="whitespace-nowrap">
                         <Button
                           size="sm"
-                          color="light"
+                          color={!r.target_id ? "default" : "light"}
                           onClick={() =>
                             navigate(`/admin/users/detail/${r.target_id}`)
                           }

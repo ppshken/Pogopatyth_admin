@@ -26,6 +26,7 @@ import {
   HiOutlineRefresh,
   HiReply,
   HiX,
+  HiOutlineInformationCircle,
 } from "react-icons/hi";
 import { AlertComponent } from "../../../component/alert";
 import { formatDate } from "../../../component/functions/formatDate";
@@ -101,6 +102,7 @@ type ApiData = {
   reports: {
     received: ReportItem[];
     written: ReportItem[];
+    pending: ReportItem[];
   };
   reviews_received: ReviewItem[];
   timeline: TimelineItem[];
@@ -274,6 +276,8 @@ export default function UserDetail() {
           icon: HiOutlineDocumentAdd,
           label: "สร้างห้อง",
         };
+      case "leave":
+        return { color: "failure", icon: HiX, label: "ออกจากห้อง" };
       case "cancel":
         return { color: "failure", icon: HiX, label: "ยกเลิกห้อง" };
       case "review":
@@ -288,9 +292,29 @@ export default function UserDetail() {
         return { color: "warning", icon: HiUsers, label: "รับเพื่อน" };
       case "edit_profile":
         return { color: "warning", icon: HiUserAdd, label: "แก้ไขโปรไฟล์" };
+      case "report":
+        return { color: "info", icon: HiOutlineInformationCircle, label: "รายงาน" };
       default:
         return { color: "light", icon: HiClock, label: action };
     }
+  };
+
+  const statusReportColor: Record<
+    string,
+    "warning" | "info" | "success" | "red" | "gray"
+  > = {
+    pending: "warning",
+    reviewed: "info",
+    resolved: "success",
+  };
+
+  const statusReportName: Record<
+    string,
+    "รอการตรวจสอบ" | "ตรวจสอบแล้ว" | "แก้ไขแล้ว" | "ยกเลิก"
+  > = {
+    pending: "รอการตรวจสอบ",
+    reviewed: "ตรวจสอบแล้ว",
+    resolved: "แก้ไขแล้ว",
   };
 
   async function fetchDetail() {
@@ -370,12 +394,12 @@ export default function UserDetail() {
         {!loading && data && (
           <>
             {/* ⚠️ Warning Card */}
-            {data.reports.received.length > 0 && (
+            {data.reports.pending.length > 0 && (
               <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-200">
                 <HiExclamationCircle className="mt-0.5 h-6 w-6 shrink-0" />
                 <div>
                   <h4 className="font-bold">
-                    ผู้ใช้นี้ถูกรายงาน {data.reports.received.length} ครั้ง
+                    ผู้ใช้นี้ถูกรายงาน {data.reports.pending.length} ครั้ง
                   </h4>
                   <p className="mt-1 text-sm">
                     โปรดตรวจสอบรายละเอียดในส่วน "ประวัติการรายงาน" ด้านล่าง
@@ -648,24 +672,39 @@ export default function UserDetail() {
                     {data.reports.received.length === 0 ? (
                       <p className="text-sm text-gray-500">ไม่เคยถูกรายงาน</p>
                     ) : (
-                      data.reports.received.map((rp) => (
-                        <div
-                          key={rp.id}
-                          className="rounded border border-red-100 bg-red-50/50 p-3 text-sm dark:border-red-900/50 dark:bg-red-900/10"
-                        >
-                          <div className="mb-1 flex justify-between">
-                            <span className="font-bold text-red-600">
-                              #{rp.id} {rp.status}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {formatDate(rp.created_at)}
-                            </span>
+                      data.reports.received.map((rp) => {
+                        return (
+                          <div
+                            key={rp.id}
+                            className="rounded border border-red-100 bg-red-50/50 p-3 text-sm dark:border-red-900/50 dark:bg-red-900/10"
+                          >
+                            <div className="mb-1 flex justify-between">
+                              <div className="flex gap-4">
+                                <span className="font-bold text-red-600">
+                                  #{rp.id}
+                                </span>
+                                <div className="flex-wrap">
+                                  <Badge
+                                    size="xs"
+                                    color={
+                                      statusReportColor[rp.status] ?? "gray"
+                                    }
+                                  >
+                                    {statusReportName[rp.status]}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              <span className="text-xs text-gray-500">
+                                {formatDate(rp.created_at)}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-300">
+                              {rp.reason}
+                            </p>
                           </div>
-                          <p className="text-gray-700 dark:text-gray-300">
-                            {rp.reason}
-                          </p>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
