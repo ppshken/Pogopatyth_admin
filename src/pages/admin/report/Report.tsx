@@ -401,12 +401,20 @@ export default function Reports() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap items-center">
-                          <Badge
-                            size="xs"
-                            color={statusColor[r.status] ?? "gray"}
-                          >
-                            {statusName[r.status]}
-                          </Badge>
+                          {loading ? (
+                            <Spinner
+                              aria-label="Spinner button example"
+                              size="sm"
+                              light
+                            />
+                          ) : (
+                            <Badge
+                              size="xs"
+                              color={statusColor[r.status] ?? "gray"}
+                            >
+                              {statusName[r.status]}
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">

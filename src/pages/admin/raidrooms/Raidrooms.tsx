@@ -355,10 +355,10 @@ export default function Raidrooms() {
                   sizing="md"
                 >
                   <option value="">ทั้งหมด</option>
-                  <option value="active">active</option>
-                  <option value="invited">invited</option>
-                  <option value="canceled">canceled</option>
-                  <option value="closed">closed</option>
+                  <option value="active">เปิดรับ</option>
+                  <option value="invited">เชิญแล้ว</option>
+                  <option value="canceled">ยกเลิก</option>
+                  <option value="closed">ปิดห้อง</option>
                 </Select>
               </div>
             </div>
@@ -392,96 +392,108 @@ export default function Raidrooms() {
             </div>
           ) : null}
 
-          {rooms.map((r) => (
-            <div
-              key={r.id}
-              className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0"
-            >
-              <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400" />
-              <div className="p-4">
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="min-w-0 font-semibold text-gray-900 dark:text-white">
-                    <span className="truncate">{r.boss}</span>
+          {rooms.map((r) => {
+            const statusroom =
+              r.status === "active"
+                ? "เปิดรับ"
+                : r.status === "invited"
+                  ? "เชิญแล้ว"
+                  : r.status === "closed"
+                    ? "ปิดห้อง"
+                    : r.status === "canceled"
+                      ? "ยกเลิก"
+                      : "-";
+            return (
+              <div
+                key={r.id}
+                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0"
+              >
+                <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-blue-500 to-sky-400" />
+                <div className="p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="min-w-0 font-semibold text-gray-900 dark:text-white">
+                      <span className="truncate">{r.boss}</span>
+                    </div>
+                    <Badge
+                      color={
+                        r.member_total === r.max_members ? "success" : "info"
+                      }
+                    >
+                      {r.member_total}/{r.max_members}
+                    </Badge>
                   </div>
-                  <Badge
-                    color={
-                      r.member_total === r.max_members ? "success" : "info"
-                    }
-                  >
-                    {r.member_total}/{r.max_members}
-                  </Badge>
-                </div>
 
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    {r.pokemon_image ? (
-                      <img
-                        src={r.pokemon_image}
-                        alt={r.boss}
-                        className="h-8 w-8 rounded-full object-cover ring-1 ring-gray-200"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-gray-200" />
-                    )}
-                    <div className="text-gray-700 dark:text-gray-200">
-                      owner: {r.owner_name ?? "-"}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      {r.pokemon_image ? (
+                        <img
+                          src={r.pokemon_image}
+                          alt={r.boss}
+                          className="h-8 w-8 rounded-full object-cover ring-1 ring-gray-200"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-gray-200" />
+                      )}
+                      <div className="text-gray-700 dark:text-gray-200">
+                        owner: {r.owner_name ?? "-"}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Badge size="sm" color={statusColor[r.status] ?? "gray"}>
+                        {statusroom}
+                      </Badge>
+                      <Badge size="sm">{formatDate(r.start_time)}</Badge>
+                    </div>
+
+                    {/* Room Details */}
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      {r.min_level && (
+                        <Badge size="sm" color="gray">
+                          Lv. {r.min_level}
+                        </Badge>
+                      )}
+                      {r.vip_only && (
+                        <Badge size="sm" color="purple">
+                          ⭐ VIP Only
+                        </Badge>
+                      )}
+                      {r.lock_room && (
+                        <Badge size="sm" color="red">
+                          🔒 Lock
+                        </Badge>
+                      )}
+                      {r.password_room && (
+                        <Badge size="sm" color="amber">
+                          {r.password_room}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="text-xs text-gray-500">
+                      สร้างเมื่อ: {formatDate(r.created_at || undefined)}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Badge size="sm" color={statusColor[r.status] ?? "gray"}>
-                      {r.status}
-                    </Badge>
-                    <Badge size="sm">{formatDate(r.start_time)}</Badge>
+                  <div className="mt-3">
+                    <Dropdown label="ตัวเลือก" size="xs" dismissOnClick={true}>
+                      <DropdownItem
+                        onClick={() =>
+                          navigate(`/admin/raidrooms/detail/${r.id}`)
+                        }
+                      >
+                        ดูข้อมูล
+                      </DropdownItem>
+                      <DropdownDivider />
+                      <DropdownItem onClick={() => handleOpenDelete(r.id)}>
+                        <span className="text-red-600">ลบ</span>
+                      </DropdownItem>
+                    </Dropdown>
                   </div>
-
-                  {/* Room Details */}
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                    {r.min_level && (
-                      <Badge size="sm" color="gray">
-                        Lv. {r.min_level}
-                      </Badge>
-                    )}
-                    {r.vip_only && (
-                      <Badge size="sm" color="purple">
-                        ⭐ VIP Only
-                      </Badge>
-                    )}
-                    {r.lock_room && (
-                      <Badge size="sm" color="red">
-                        🔒 Lock
-                      </Badge>
-                    )}
-                    {r.password_room && (
-                      <Badge size="sm" color="amber">
-                        {r.password_room}
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="text-xs text-gray-500">
-                    สร้างเมื่อ: {formatDate(r.created_at || undefined)}
-                  </div>
-                </div>
-
-                <div className="mt-3">
-                  <Dropdown label="ตัวเลือก" size="xs" dismissOnClick={true}>
-                    <DropdownItem
-                      onClick={() =>
-                        navigate(`/admin/raidrooms/detail/${r.id}`)
-                      }
-                    >
-                      ดูข้อมูล
-                    </DropdownItem>
-                    <DropdownDivider />
-                    <DropdownItem onClick={() => handleOpenDelete(r.id)}>
-                      <span className="text-red-600">ลบ</span>
-                    </DropdownItem>
-                  </Dropdown>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Desktop table */}
@@ -518,6 +530,16 @@ export default function Raidrooms() {
 
                 {rooms.map((r) => {
                   const cd = getCountdown(r.start_time, r.status);
+                  const statusroom =
+                    r.status === "active"
+                      ? "เปิดรับ"
+                      : r.status === "invited"
+                        ? "เชิญแล้ว"
+                        : r.status === "closed"
+                          ? "ปิดห้อง"
+                          : r.status === "canceled"
+                            ? "ยกเลิก"
+                            : "-";
                   return (
                     <TableRow
                       key={r.id}
@@ -568,7 +590,7 @@ export default function Raidrooms() {
                             size="sm"
                             color={statusColor[r.status] ?? "gray"}
                           >
-                            {r.status}
+                            {statusroom}
                           </Badge>
                         </div>
                       </TableCell>

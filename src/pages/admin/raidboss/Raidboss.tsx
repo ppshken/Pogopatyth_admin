@@ -14,6 +14,7 @@ import {
   DropdownDivider,
   TextInput,
   Select,
+  Checkbox,
 } from "flowbite-react";
 import { AlertComponent } from "../../../component/alert";
 import { ModalComponent } from "../../../component/modal";
@@ -39,40 +40,29 @@ type RaidBoss = {
   created_at?: string | null;
 };
 
-/* ---------- Helpers: วันที่ & สถานะ ---------- */
+// Type สำหรับตัวที่จะ Import
+type ImportMon = {
+  name: string;
+  tier: string | number;
+  image?: string | null;
+  types?: string[];
+  raw: any;
+  selected: boolean;
+};
+
+/* ---------- Helpers ---------- */
 function parseLocalDate(s?: string | null): Date | null {
   if (!s) return null;
   const iso = s.includes("T") ? s : s.replace(" ", "T");
   const d = new Date(iso);
   return isNaN(d.getTime()) ? null : d;
 }
-function isActiveByNow(
-  start?: string | null,
-  end?: string | null,
-  now = new Date(),
-): boolean {
-  const s = parseLocalDate(start);
-  const e = parseLocalDate(end);
-  if (!s || !e) return false;
-  return now >= s && now <= e;
-}
 
-/* ---------- Avatar fallback (ตัวอักษรแรก + สีคงที่) ---------- */
+/* ---------- Avatar ---------- */
 const AVATAR_COLORS = [
-  "bg-rose-500",
-  "bg-orange-500",
-  "bg-amber-500",
-  "bg-lime-500",
-  "bg-emerald-500",
-  "bg-teal-500",
-  "bg-cyan-500",
-  "bg-sky-500",
-  "bg-blue-500",
-  "bg-indigo-500",
-  "bg-violet-500",
-  "bg-purple-500",
-  "bg-fuchsia-500",
-  "bg-pink-500",
+  "bg-rose-500", "bg-orange-500", "bg-amber-500", "bg-lime-500", "bg-emerald-500",
+  "bg-teal-500", "bg-cyan-500", "bg-sky-500", "bg-blue-500", "bg-indigo-500",
+  "bg-violet-500", "bg-purple-500", "bg-fuchsia-500", "bg-pink-500",
 ];
 function hashString(s: string): number {
   let h = 0;
@@ -87,7 +77,7 @@ function MonAvatar({
   src,
   name,
   id,
-  size = 8, // 8=2rem
+  size = 8,
 }: {
   src?: string | null;
   name?: string | null;
@@ -138,30 +128,35 @@ export default function RaidBosses() {
   );
   const [extLoading, setExtLoading] = useState(false);
   const [extError, setExtError] = useState<string | null>(null);
-  const [extMons, setExtMons] = useState<any[]>([]);
+  const [extMons, setExtMons] = useState<ImportMon[]>([]); 
   const [importStart, setImportStart] = useState<string>("");
   const [importEnd, setImportEnd] = useState<string>("");
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Time Status State
+  const [currentTime, setCurrentTime] = useState(new Date());
+
   const navigate = useNavigate();
   const location = useLocation();
   const alert = location.state?.alert;
   const msg = location.state?.msg;
 
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   async function fetchBosses() {
     setLoading(true);
     setError(null);
-
     try {
       const API_BASE = import.meta.env.VITE_API_BASE;
       const token = localStorage.getItem("auth_token");
-
       const url = `${API_BASE}/api/admin/raidboss/list.php?page=${page}&limit=${limit}&search=${encodeURIComponent(
         search,
       )}`;
-
       const res = await fetch(url, {
         method: "GET",
         headers: {
@@ -169,13 +164,9 @@ export default function RaidBosses() {
           Authorization: token ? `Bearer ${token}` : "",
         },
       });
-
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       const body = await res.json();
-
-      if (!body || body.success === false) {
-        throw new Error(body?.message || "API error");
-      }
+      if (!body || body.success === false) throw new Error(body?.message || "API error");
 
       const items = Array.isArray(body.data) ? body.data : [];
       const normalized: RaidBoss[] = items.map((b: RaidBoss) => ({
@@ -194,7 +185,6 @@ export default function RaidBosses() {
         end_date: b.end_date ?? null,
         created_at: b.created_at ?? null,
       }));
-
       setBosses(normalized);
       setTotal(Number(body.pagination?.total) || 0);
       setTotalPages(Math.max(1, Number(body.pagination?.total_pages) || 1));
@@ -209,24 +199,18 @@ export default function RaidBosses() {
     try {
       setLoading(true);
       setError(null);
-
       const API_BASE = import.meta.env.VITE_API_BASE;
       const token = localStorage.getItem("auth_token");
-
       const res = await fetch(`${API_BASE}/api/admin/raidboss/delete.php`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
         },
         body: JSON.stringify({ id }),
       });
-
       const body = await res.json();
-      if (!res.ok || body.success === false) {
-        throw new Error(body?.message || `Server returned ${res.status}`);
-      }
-
+      if (!res.ok || body.success === false) throw new Error(body?.message || `Server returned ${res.status}`);
       setSuccessMsg(body.message || "ลบ Raid Boss เรียบร้อยแล้ว");
       await fetchBosses();
       setShow(true);
@@ -238,101 +222,158 @@ export default function RaidBosses() {
     }
   }
 
-  const handleOpenDelete = (id: number) => {
-    setDeleteId(id);
-    setShowDeleteModal(true);
-  };
-  const handleCloseDelete = () => {
-    setShowDeleteModal(false);
-    setDeleteId(null);
-  };
-  const handleConfirmDelete = async (id: number) => {
-    await deleteBoss(id);
-    handleCloseDelete();
-  };
+  const handleOpenDelete = (id: number) => { setDeleteId(id); setShowDeleteModal(true); };
+  const handleCloseDelete = () => { setShowDeleteModal(false); setDeleteId(null); };
+  const handleConfirmDelete = async (id: number) => { await deleteBoss(id); handleCloseDelete(); };
 
-  useEffect(() => {
-    fetchBosses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit]);
+  useEffect(() => { fetchBosses(); }, [page, limit]);
 
   useEffect(() => {
     if (alert && msg) {
       setSuccessMsg(msg);
       setShow(true);
-      const timer = setTimeout(() => {
-        setShow(false);
-        navigate(location.pathname, { replace: true });
-      }, 3000);
+      const timer = setTimeout(() => { setShow(false); navigate(location.pathname, { replace: true }); }, 3000);
       return () => clearTimeout(timer);
     }
   }, [alert, msg, navigate, location.pathname]);
 
-  /* ---------- UI ---------- */
+  const getTimeStatus = (start?: string | null, end?: string | null) => {
+    const s = parseLocalDate(start);
+    const e = parseLocalDate(end);
+    if (!s || !e) return { status: "inactive", label: "ไม่ใช้งาน", color: "failure" };
+    if (currentTime >= s && currentTime <= e) return { status: "active", label: "ใช้งาน", color: "success" };
+    if (currentTime < s) {
+      const diff = s.getTime() - currentTime.getTime();
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      let timerText = "";
+      if (days > 0) timerText += `${days}ว `;
+      if (hours > 0) timerText += `${hours}ชม. `;
+      timerText += `${minutes}น. ${seconds}วิ`;
+      return { status: "upcoming", label: `เริ่มใน ${timerText}`, color: "warning" };
+    }
+    return { status: "ended", label: "จบแล้ว/ไม่ใช้งาน", color: "failure" };
+  };
+
+  /* ---------- IMPORT LOGIC ---------- */
+  const handleFetchPreview = async () => {
+    if (!externalUrl) return setExtError("กรุณาใส่ URL ของ API");
+    setExtLoading(true);
+    setExtError(null);
+    setExtMons([]);
+    try {
+      const res = await fetch(externalUrl, { cache: "no-store" });
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const data = await res.json();
+      if (!Array.isArray(data)) throw new Error("รูปแบบข้อมูลต้องเป็นอาเรย์");
+      
+      const mapped: ImportMon[] = data.map((it: any, idx: number) => ({
+        name: it.name ?? it.pokemon_name ?? `#${idx}`,
+        tier: it.tier ?? it.pokemon_tier ?? "-",
+        image: it.image ?? it.pokemon_image ?? null,
+        types: Array.isArray(it.types) ? it.types : [],
+        raw: it,
+        selected: true,
+      }));
+      setExtMons(mapped);
+    } catch (e: any) {
+      setExtError(typeof e === "string" ? e : (e?.message ?? "เกิดข้อผิดพลาดในการเรียก API"));
+    } finally {
+      setExtLoading(false);
+    }
+  };
+
+  const toggleImportSelection = (index: number) => {
+    setExtMons(prev => prev.map((m, i) => i === index ? { ...m, selected: !m.selected } : m));
+  };
+
+  const toggleAllSelection = (select: boolean) => {
+    setExtMons(prev => prev.map(m => ({ ...m, selected: select })));
+  };
+
+  const handleImportSubmit = async () => {
+    const selectedItems = extMons.filter(m => m.selected);
+    if (selectedItems.length === 0) return setExtError("กรุณาเลือกอย่างน้อย 1 ตัว");
+    
+    setExtLoading(true);
+    setExtError(null);
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE;
+      const token = localStorage.getItem("auth_token") || "";
+      
+      const res = await fetch(
+        `${API_BASE}/api/admin/raidboss/import_from_url.php`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+          body: JSON.stringify({
+            data: selectedItems.map(m => m.raw), 
+            start_date: importStart || null,
+            end_date: importEnd || null,
+          }),
+        },
+      );
+      const body = await res.json();
+      if (!res.ok || body.success === false) throw new Error(body.message || `Server ${res.status}`);
+      
+      setSuccessMsg(`${body.message || "นำเข้าข้อมูลสำเร็จ"} (${selectedItems.length} รายการ)`);
+      setShow(true);
+      setTimeout(() => setShow(false), 4000);
+      setExtMons([]);
+      fetchBosses();
+    } catch (e: any) {
+      setExtError(e?.message ?? "นำเข้าไม่สำเร็จ");
+    } finally {
+      setExtLoading(false);
+    }
+  };
+  /* -------------------------------------- */
+
   return (
     <div className="p-4">
       <div className="max-w-screen-xxl mx-auto">
-        {/* Header */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              บอส (Raid Boss)
-            </h3>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-              จัดการข้อมูล Raid Boss พร้อมสถานะตามช่วงเวลาเริ่ม/สิ้นสุด
-            </p>
-          </div>
-
-          {/* Search + Limit + Create */}
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <div className="flex w-full items-center gap-2 sm:w-[360px]">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="ค้นหา ชื่อโปเกม่อน / Pokemon ID"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-              />
-              <Button
-                onClick={() => {
-                  setPage(1);
-                  fetchBosses();
-                }}
-              >
-                ค้นหา
-              </Button>
+            <div>
+                <h3 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">บอส (Raid Boss)</h3>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">จัดการข้อมูล Raid Boss พร้อมระบบนับถอยหลัง</p>
             </div>
+             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+             <div className="flex w-full items-center gap-2 sm:w-[360px]">
+               <input
+                 type="text"
+                 value={search}
+                 onChange={(e) => setSearch(e.target.value)}
+                 placeholder="ค้นหา..."
+                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+               />
+               <Button onClick={() => { setPage(1); fetchBosses(); }}>ค้นหา</Button>
+             </div>
 
-            <div className="flex items-center gap-2 sm:pl-2">
-              <label className="text-sm text-gray-600 dark:text-gray-300">
-                แสดงต่อหน้า:
-              </label>
-              <div className="w-20">
-                <Select
-                  value={limit}
-                  onChange={(e) => setLimit(Number(e.target.value))}
-                  sizing="md"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                </Select>
-              </div>
-            </div>
+             {/* LIMIT SELECTOR กลับมาแล้วตรงนี้ */}
+             <div className="flex items-center gap-2 sm:pl-2">
+                <label className="text-sm text-gray-600 dark:text-gray-300">แสดงต่อหน้า:</label>
+                <div className="w-20">
+                  <Select value={limit} onChange={(e) => setLimit(Number(e.target.value))} sizing="md">
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </Select>
+                </div>
+             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => navigate("/admin/raidboss/add")}
-                className="sm:ml-2"
-              >
-                สร้างบอสใหม่
-              </Button>
-            </div>
-          </div>
+             <div className="flex items-center gap-2">
+               <Button onClick={() => navigate("/admin/raidboss/add")} className="sm:ml-2">สร้างบอสใหม่</Button>
+             </div>
+           </div>
         </div>
 
-        {/* Import from external API */}
+        {/* --- SECTION IMPORT --- */}
         <div className="mb-4 rounded-lg border border-dashed border-gray-300 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
             <TextInput
@@ -340,163 +381,76 @@ export default function RaidBosses() {
               value={externalUrl}
               onChange={(e) => setExternalUrl(e.target.value)}
               placeholder="URL ของ API (ตัวอย่าง JSON)"
-              className="w-full rounded-lg border-gray-300 px-3 py-2 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+              className="w-full flex-1"
             />
-
             <div className="flex items-center gap-2">
-              <TextInput
-                type="date"
-                value={importStart}
-                onChange={(e) => setImportStart(e.target.value)}
-                className="rounded-lg px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                title="Start date/time for imported raids"
-              />
-              <TextInput
-                type="date"
-                value={importEnd}
-                onChange={(e) => setImportEnd(e.target.value)}
-                className="rounded-lg px-2 py-1 text-sm text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
-                title="End date/time for imported raids"
-              />
+              <TextInput type="date" value={importStart} onChange={(e) => setImportStart(e.target.value)} title="Start Date"/>
+              <TextInput type="date" value={importEnd} onChange={(e) => setImportEnd(e.target.value)} title="End Date"/>
             </div>
-
             <div className="flex items-center gap-2">
-              <Button
-                color="yellow"
-                onClick={async () => {
-                  if (!externalUrl) return setExtError("กรุณาใส่ URL ของ API");
-                  setExtLoading(true);
-                  setExtError(null);
-                  setExtMons([]);
-                  try {
-                    const res = await fetch(externalUrl, { cache: "no-store" });
-                    if (!res.ok) throw new Error(`API returned ${res.status}`);
-                    const data = await res.json();
-                    if (!Array.isArray(data))
-                      throw new Error("รูปแบบข้อมูลต้องเป็นอาเรย์");
-                    const mapped = data.map((it: any, idx: number) => ({
-                      name: it.name ?? it.pokemon_name ?? `#${idx}`,
-                      tier: it.tier ?? it.pokemon_tier ?? "-",
-                      image: it.image ?? it.pokemon_image ?? null,
-                      types: Array.isArray(it.types) ? it.types : [],
-                      raw: it,
-                    }));
-                    setExtMons(mapped);
-                  } catch (e: any) {
-                    setExtError(
-                      typeof e === "string"
-                        ? e
-                        : (e?.message ?? "เกิดข้อผิดพลาดในการเรียก API"),
-                    );
-                  } finally {
-                    setExtLoading(false);
-                  }
-                }}
-              >
-                {extLoading ? "กำลังดึง..." : "ตัวอย่าง"}
-              </Button>
-
-              <Button
-                color="green"
-                className="w-20"
-                onClick={async () => {
-                  if (extMons.length === 0)
-                    return setExtError("ยังไม่มีข้อมูลสำหรับนำเข้า");
-                  setExtLoading(true);
-                  setExtError(null);
-                  try {
-                    const API_BASE = import.meta.env.VITE_API_BASE;
-                    const token = localStorage.getItem("auth_token") || "";
-                    const res = await fetch(
-                      `${API_BASE}/api/admin/raidboss/import_from_url.php`,
-                      {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                          Authorization: token ? `Bearer ${token}` : "",
-                        },
-                        body: JSON.stringify({
-                          url:
-                            externalUrl ||
-                            "https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/raids.json",
-                          start_date: importStart || null,
-                          end_date: importEnd || null,
-                        }),
-                      },
-                    );
-                    const body = await res.json();
-                    if (!res.ok || body.success === false)
-                      throw new Error(body.message || `Server ${res.status}`);
-                    // show result counts if provided
-                    const inserted = Number(body.inserted ?? 0);
-                    const skipped = Math.max(0, extMons.length - inserted);
-                    setSuccessMsg(
-                      `${body.message || "นำเข้าข้อมูลสำเร็จ"} — เพิ่ม: ${inserted} / ข้าม: ${skipped}`,
-                    );
-                    setShow(true);
-                    setTimeout(() => setShow(false), 4000);
-                    fetchBosses();
-                  } catch (e: any) {
-                    setExtError(e?.message ?? "นำเข้าไม่สำเร็จ");
-                  } finally {
-                    setExtLoading(false);
-                  }
-                }}
-              >
-                นำเข้า
+              <Button color="yellow" onClick={handleFetchPreview} disabled={extLoading}>
+                {extLoading ? "โหลด..." : "ดึงข้อมูล"}
               </Button>
             </div>
           </div>
-        </div>
 
-        {/* Alerts */}
-        {successMsg && show && (
-          <div className="mb-4">
-            <AlertComponent message={successMsg} type="success" />
-          </div>
-        )}
-        {error && (
-          <div className="mb-4">
-            <AlertComponent message={error} type="failure" />
-          </div>
-        )}
+          {extError && <div className="mt-3"><AlertComponent message={extError} type="failure" /></div>}
 
-        {/* External API preview */}
-        {extError && (
-          <div className="mb-4">
-            <AlertComponent message={extError} type="failure" />
-          </div>
-        )}
-        {extMons.length > 0 && (
-          <div className="mb-4 rounded-lg border border-gray-200 bg-white p-3 text-sm dark:bg-gray-800 dark:text-gray-100">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="font-medium">
-                ตัวอย่างข้อมูลจาก API ({extMons.length})
+          {extMons.length > 0 && (
+            <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:bg-gray-900">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                  พบข้อมูล {extMons.length} รายการ — เลือก: <span className="text-blue-600 font-bold">{extMons.filter(m => m.selected).length}</span> รายการ
+                </div>
+                <div className="flex gap-2">
+                  <Button size="xs" color="light" onClick={() => toggleAllSelection(true)}>เลือกทั้งหมด</Button>
+                  <Button size="xs" color="light" onClick={() => toggleAllSelection(false)}>ไม่เลือกเลย</Button>
+                  <Button 
+                    size="sm" 
+                    color="green" 
+                    onClick={handleImportSubmit} 
+                    disabled={extLoading || extMons.filter(m => m.selected).length === 0}
+                  >
+                     {extLoading ? "กำลังนำเข้า..." : `ยืนยันนำเข้า`}
+                  </Button>
+                </div>
               </div>
-              <div className="text-xs text-gray-500">
-                (ยังไม่ได้บันทึกลงระบบ)
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {extMons.map((m, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-2 rounded border border-gray-300 p-2"
-                >
-                  <MonAvatar src={m.image || undefined} name={m.name} id={i} />
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{m.name}</div>
-                    <div className="text-xs text-gray-500">
-                      {String(m.tier)}
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 max-h-[400px] overflow-y-auto p-1">
+                {extMons.map((m, i) => (
+                  <div 
+                    key={i}
+                    onClick={() => toggleImportSelection(i)}
+                    className={`
+                        cursor-pointer relative flex flex-col items-center rounded-lg border p-3 transition-all select-none
+                        ${m.selected 
+                            ? "border-green-500 bg-green-50 dark:bg-green-900/20 ring-2 ring-green-500" 
+                            : "border-gray-200 bg-white hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800"
+                        }
+                    `}
+                  >
+                    <div className="absolute right-2 top-2 pointer-events-none">
+                        <Checkbox checked={m.selected} readOnly />
+                    </div>
+                    <div className="mb-2">
+                        <MonAvatar src={m.image || undefined} name={m.name} id={i} size={8} />
+                    </div>
+                    <div className="text-center w-full min-w-0">
+                        <div className="truncate text-sm font-semibold text-gray-900 dark:text-white" title={m.name}>
+                            {m.name}
+                        </div>
+                        <div className="text-xs text-gray-500">Tier: {m.tier}</div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* จำนวนทั้งหมด */}
+        {successMsg && show && <div className="mb-4"><AlertComponent message={successMsg} type="success" /></div>}
+        {error && <div className="mb-4"><AlertComponent message={error} type="failure" /></div>}
+
         <div className="mb-4 flex justify-end text-sm text-gray-500 dark:text-gray-400">
           จำนวนทั้งหมด {total} รายการ
         </div>
@@ -504,87 +458,40 @@ export default function RaidBosses() {
         {/* Mobile cards */}
         <div className="space-y-3 md:hidden">
           {bosses.length === 0 && !loading ? (
-            <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-gray-700">
-              ไม่พบบอส
-            </div>
+            <div className="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-gray-700">ไม่พบบอส</div>
           ) : null}
 
           {bosses.map((b) => {
-            const active = isActiveByNow(b.start_date, b.end_date);
+            const { label, color } = getTimeStatus(b.start_date, b.end_date);
             return (
-              <div
-                key={b.id}
-                className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0"
-              >
+              <div key={b.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm ring-1 ring-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:ring-0">
                 <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-blue-500 to-indigo-500" />
                 <div className="p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex min-w-0 items-center gap-3">
-                      <MonAvatar
-                        src={b.pokemon_image}
-                        name={b.pokemon_name}
-                        id={b.pokemon_id}
-                        size={10}
-                      />
+                      <MonAvatar src={b.pokemon_image} name={b.pokemon_name} id={b.pokemon_id} size={10} />
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-gray-900 dark:text-white">
-                          {b.pokemon_name}{" "}
-                          <span className="text-xs text-gray-500">
-                            #{b.pokemon_id}
-                          </span>
+                          {b.pokemon_name} <span className="text-xs text-gray-500">#{b.pokemon_id}</span>
                         </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-xs">
+                        <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
                           <Badge size="sm">{String(b.pokemon_tier)}</Badge>
-                          <Badge size="sm" color={active ? "success" : "gray"}>
-                            {active ? "ใช้งาน" : "ไม่ใช้งาน"}
-                          </Badge>
-                          {b.type && (
-                            <Badge size="sm" color="indigo">
-                              {b.type}
-                            </Badge>
-                          )}
-                          {b.special && (
-                            <Badge size="sm" color="purple">
-                              {b.special}
-                            </Badge>
-                          )}
+                          <Badge size="sm" color={color}>{label}</Badge>
+                          {b.type && <Badge size="sm" color="indigo">{b.type}</Badge>}
+                          {b.special && <Badge size="sm" color="green">Special</Badge>}
                         </div>
                       </div>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    <div>
-                      เริ่ม:{" "}
-                      <span className="font-medium">
-                        {formatDate(b.start_date)}
-                      </span>
-                    </div>
-                    <div>
-                      สิ้นสุด:{" "}
-                      <span className="font-medium">
-                        {formatDate(b.end_date)}
-                      </span>
-                    </div>
-                    <div className="col-span-2">
-                      สร้างเมื่อ:{" "}
-                      <span className="font-medium">
-                        {formatDate(b.created_at)}
-                      </span>
-                    </div>
+                    <div>เริ่ม: <span className="font-medium">{formatDate(b.start_date)}</span></div>
+                    <div>สิ้นสุด: <span className="font-medium">{formatDate(b.end_date)}</span></div>
                   </div>
-
                   <div className="mt-3">
                     <Dropdown label="เลือก" size="xs" dismissOnClick>
-                      <DropdownItem
-                        onClick={() => navigate(`/admin/raidboss/edit/${b.id}`)}
-                      >
-                        แก้ไข
-                      </DropdownItem>
+                      <DropdownItem onClick={() => navigate(`/admin/raidboss/edit/${b.id}`)}>แก้ไข</DropdownItem>
                       <DropdownDivider />
-                      <DropdownItem onClick={() => handleOpenDelete(b.id)}>
-                        <span className="text-red-600">ลบ</span>
-                      </DropdownItem>
+                      <DropdownItem onClick={() => handleOpenDelete(b.id)}><span className="text-red-600">ลบ</span></DropdownItem>
                     </Dropdown>
                   </div>
                 </div>
@@ -603,121 +510,43 @@ export default function RaidBosses() {
                   <TableHeadCell className="w-[8%]">ระดับ</TableHeadCell>
                   <TableHeadCell className="w-[12%]">ประเภท</TableHeadCell>
                   <TableHeadCell className="w-[12%]">Special</TableHeadCell>
-                  <TableHeadCell className="w-[14%]">
-                    วันที่เริ่มต้น
-                  </TableHeadCell>
-                  <TableHeadCell className="w-[14%]">
-                    วันที่สิ้นสุด
-                  </TableHeadCell>
-                  <TableHeadCell className="w-[10%]">สถานะ</TableHeadCell>
+                  <TableHeadCell className="w-[14%]">วันที่เริ่มต้น</TableHeadCell>
+                  <TableHeadCell className="w-[14%]">วันที่สิ้นสุด</TableHeadCell>
+                  <TableHeadCell className="w-[12%]">สถานะ</TableHeadCell>
                   <TableHeadCell className="w-[12%]">สร้างเมื่อ</TableHeadCell>
                   <TableHeadCell className="w-[8%]">จัดการ</TableHeadCell>
                 </TableRow>
               </TableHead>
-
               <TableBody className="divide-y">
                 {bosses.length === 0 && !loading && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="py-8 text-center text-gray-500"
-                    >
-                      ไม่พบบอส
-                    </TableCell>
-                  </TableRow>
+                  <TableRow><TableCell colSpan={9} className="py-8 text-center text-gray-500">ไม่พบบอส</TableCell></TableRow>
                 )}
-
                 {bosses.map((b) => {
-                  const active = isActiveByNow(b.start_date, b.end_date);
-                  const colortype =
-                    b.type === "normal"
-                      ? "gray"
-                      : b.type === "mega"
-                        ? "pink"
-                        : b.type === "gigantamax"
-                          ? "red"
-                          : b.type === "dynamax"
-                            ? "red"
-                            : b.type === "shadow"
-                              ? "purple"
-                              : "indigo";
+                  const { label, color } = getTimeStatus(b.start_date, b.end_date);
+                  const colortype = b.type === "normal" ? "gray" : b.type === "mega" ? "pink" : b.type === "gigantamax" ? "red" : b.type === "dynamax" ? "red" : b.type === "shadow" ? "purple" : "indigo";
                   return (
-                    <TableRow
-                      key={b.id}
-                      className="bg-white transition-colors hover:bg-gray-50/60 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/40"
-                    >
+                    <TableRow key={b.id} className="bg-white transition-colors hover:bg-gray-50/60 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700/40">
                       <TableCell>
                         <div className="flex min-w-0 items-center gap-2">
-                          <MonAvatar
-                            src={b.pokemon_image}
-                            name={b.pokemon_name}
-                            id={b.pokemon_id}
-                          />
+                          <MonAvatar src={b.pokemon_image} name={b.pokemon_name} id={b.pokemon_id} />
                           <div className="min-w-0">
-                            <div className="truncate font-medium">
-                              {b.pokemon_name}
-                            </div>
-                            <div className="truncate text-xs text-gray-500">
-                              #{b.pokemon_id}
-                            </div>
+                            <div className="truncate font-medium">{b.pokemon_name}</div>
+                            <div className="truncate text-xs text-gray-500">#{b.pokemon_id}</div>
                           </div>
                         </div>
                       </TableCell>
-
                       <TableCell>{String(b.pokemon_tier)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {b.type && (
-                            <div className="flex flex-wrap gap-1">
-                              {b.type && (
-                                <Badge size="sm" color={colortype}>
-                                  {b.type}
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        <Badge size="sm" color={b.special ? "green" : "gray"}>
-                          {b.special ? "Special" : "-"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDate(b.start_date)}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {formatDate(b.end_date)}
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          <Badge
-                            size="sm"
-                            color={active ? "success" : "failure"}
-                          >
-                            {active ? "ใช้งาน" : "ไม่ใช้งาน"}
-                          </Badge>
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        {formatDate(b.created_at)}
-                      </TableCell>
-
+                      <TableCell>{b.type && <Badge size="sm" color={colortype}>{b.type}</Badge>}</TableCell>
+                      <TableCell className="whitespace-nowrap"><Badge size="sm" color={b.special ? "green" : "gray"}>{b.special ? "Special" : "-"}</Badge></TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(b.start_date)}</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(b.end_date)}</TableCell>
+                      <TableCell><Badge size="sm" color={color}>{label}</Badge></TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(b.created_at)}</TableCell>
                       <TableCell className="text-right">
                         <Dropdown label="เลือก" size="xs" dismissOnClick inline>
-                          <DropdownItem
-                            onClick={() =>
-                              navigate(`/admin/raidboss/edit/${b.id}`)
-                            }
-                          >
-                            แก้ไข
-                          </DropdownItem>
+                          <DropdownItem onClick={() => navigate(`/admin/raidboss/edit/${b.id}`)}>แก้ไข</DropdownItem>
                           <DropdownDivider />
-                          <DropdownItem onClick={() => handleOpenDelete(b.id)}>
-                            <span className="text-red-600">ลบ</span>
-                          </DropdownItem>
+                          <DropdownItem onClick={() => handleOpenDelete(b.id)}><span className="text-red-600">ลบ</span></DropdownItem>
                         </Dropdown>
                       </TableCell>
                     </TableRow>
@@ -728,24 +557,11 @@ export default function RaidBosses() {
           </div>
         </div>
 
-        {/* Pagination */}
         <div className="mt-4">
-          <PaginationComponent
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={(p) => setPage(p)}
-          />
+          <PaginationComponent currentPage={page} totalPages={totalPages} onPageChange={(p) => setPage(p)} />
         </div>
-
-        {/* Modal ยืนยันลบ */}
         {showDeleteModal && (
-          <ModalComponent
-            header="ยืนยันการลบ"
-            msg="คุณต้องการลบ Raid Boss นี้หรือไม่?"
-            id={deleteId ?? undefined}
-            onConfirm={handleConfirmDelete}
-            onClose={handleCloseDelete}
-          />
+          <ModalComponent header="ยืนยันการลบ" msg="คุณต้องการลบ Raid Boss นี้หรือไม่?" id={deleteId ?? undefined} onConfirm={handleConfirmDelete} onClose={handleCloseDelete} />
         )}
       </div>
     </div>

@@ -93,7 +93,7 @@ try {
                     ELSE 3 
                 END ASC,
                 -- 2. ในกลุ่มเดียวกัน ให้เรียงตามวันที่เริ่มล่าสุดก่อน
-                start_date DESC, 
+                start_date ASC, 
                 created_at DESC
             LIMIT $limit OFFSET $offset";
 

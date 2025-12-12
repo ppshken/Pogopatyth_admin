@@ -14,8 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once __DIR__ . "/../../config/db.php";   // ต้องมี $pdo (PDO)
-require_once __DIR__ . "/../../config/jwt.php";  // verify_jwt($token)
+require_once __DIR__ . "/../../config/db.php";   // $pdo
+require_once __DIR__ . "/../../config/jwt.php";  // verify_jwt
 
 /** ---------- Auth ---------- */
 $headers = function_exists('apache_request_headers') ? apache_request_headers() : [];
@@ -36,90 +36,89 @@ try {
     }
 
     /** ---------- Input ---------- */
-    $data = json_decode(file_get_contents('php://input'), true);
-    $url        = trim((string)($data['url'] ?? ''));
-    $start_date = trim((string)($data['start_date'] ?? ''));  // optional
-    $end_date   = trim((string)($data['end_date'] ?? ''));    // optional
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    // รับค่าวันที่
+    $start_date = trim((string)($input['start_date'] ?? '')); 
+    $end_date   = trim((string)($input['end_date'] ?? ''));
 
-    if ($url === '') {
-        throw new Exception('กรุณาระบุ url');
+    // --- ตรวจสอบ Data (รับเฉพาะ Data ที่ส่งตรงมาเท่านั้น) ---
+    if (!isset($input['data']) || !is_array($input['data'])) {
+        throw new Exception("ไม่พบข้อมูลรายการบอส (กรุณาเลือกข้อมูลและกดนำเข้าใหม่)");
     }
+    
+    $arr = $input['data'];
 
-    /** ---------- Fetch external JSON ---------- */
-    $opts = [
-        'http' => [
-            'method'  => 'GET',
-            'header'  => "User-Agent: pogopartyth-import/1.0\r\n",
-            'timeout' => 20,
-        ]
-    ];
-    $context = stream_context_create($opts);
-    $raw = @file_get_contents($url, false, $context);
-    if ($raw === false) {
-        throw new Exception('ไม่สามารถดึงข้อมูลจาก URL ได้');
-    }
-
-    $arr = json_decode($raw, true);
-    if (!is_array($arr)) {
-        throw new Exception('ข้อมูลจาก URL ไม่ใช่รูปแบบอาเรย์ของรายการบอส');
-    }
-
-    /** ---------- Prepare ---------- */
-    // แนะนำ: คอลัมน์ในตารางควรเป็น cp_boost_min/cp_boost_max (ไม่ใช่ cp_boots_*)
+    /** ---------- Prepare SQL ---------- */
+    // เพิ่มคอลัมน์ type ลงไปใน SQL
     $sql = "INSERT INTO raid_boss
-        (pokemon_id, pokemon_name, pokemon_image, pokemon_tier, start_date, end_date,
+        (pokemon_id, pokemon_name, pokemon_image, pokemon_tier, type, start_date, end_date,
          cp_normal_min, cp_normal_max, cp_boost_min, cp_boost_max, maximum, created_at)
         VALUES
-        (:pokemon_id, :pokemon_name, :pokemon_image, :pokemon_tier, :start_date, :end_date,
+        (:pokemon_id, :pokemon_name, :pokemon_image, :pokemon_tier, :type, :start_date, :end_date,
          :cp_normal_min, :cp_normal_max, :cp_boost_min, :cp_boost_max, 10, NOW())";
 
     $stmtInsert = $pdo->prepare($sql);
 
-    // เช็คซ้ำตามชื่อ + tier (ตัวเลข) ถ้ามี UNIQUE KEY ก็ใช้ ON DUPLICATE แทนได้
-    $stmtCheck = $pdo->prepare('SELECT id FROM raid_boss WHERE pokemon_name = ? AND pokemon_tier = ? LIMIT 1');
+    // เช็คซ้ำตามชื่อ + tier + type (เพื่อความชัวร์)
+    $stmtCheck = $pdo->prepare('SELECT id FROM raid_boss WHERE pokemon_name = ? AND pokemon_tier = ? AND type = ? LIMIT 1');
 
     $pdo->beginTransaction();
     $inserted = 0;
 
     foreach ($arr as $item) {
-        // ----- map fields -----
-        $name  = trim((string)($item['name']  ?? ''));
-        $tier  = (string)($item['tier'] ?? '');     // "Tier 3", "Mega", "Shadow Tier 5", ...
-        $image = (string)($item['image'] ?? '');
+        // ----- Extract Data -----
+        $name  = trim((string)($item['name'] ?? $item['pokemon_name'] ?? ''));
+        $image = (string)($item['image'] ?? $item['pokemon_image'] ?? '');
+        $tier_str = (string)($item['tier'] ?? $item['pokemon_tier'] ?? '');
 
-        if ($name === '') {
-            // ข้ามแถวว่าง
-            continue;
+        if ($name === '') continue; // ข้ามถ้าไม่มีชื่อ
+
+        // ----- Logic: Type -----
+        // ถ้ามี Shadow -> shadow, ถ้ามี Mega -> mega, อื่นๆ -> normal
+        $type = 'normal';
+        if (stripos($tier_str, 'Shadow') !== false) {
+            $type = 'shadow';
+        } elseif (stripos($tier_str, 'Mega') !== false) {
+            $type = 'mega';
         }
 
-        // tier_num: ดึงเลขออกมา ถ้าไม่มี (เช่น "Mega") -> 0
-        $tier_num = 4;
-        if (preg_match('/(\d+)/', $tier, $tm)) {
+        // ----- Logic: Tier Number -----
+        // ดึงตัวเลขออกจาก string (เช่น "Tier 5" -> 5)
+        $tier_num = 0;
+        if (preg_match('/(\d+)/', $tier_str, $tm)) {
             $tier_num = (int)$tm[1];
+        } else {
+            // ถ้าไม่เจอตัวเลข ให้กำหนดค่า Default ตามประเภท
+            if ($type === 'mega') $tier_num = 4; // ปกติ Mega มักเทียบเท่า Tier 4
+            elseif ($type === 'shadow') $tier_num = 5; // Shadow มักเป็น Tier 1,3,5 (ใส่ 5 ไว้ก่อนถ้าหาไม่เจอ)
+            else $tier_num = 1;
         }
 
-        // combat power (ตั้งค่าดีฟอลต์ให้ไม่พัง)
+        // ----- Combat Power -----
+        // เช็คเผื่อโครงสร้าง array ซ้อนกัน
         $cp_normal_min = (int)($item['combatPower']['normal']['min']   ?? 0);
         $cp_normal_max = (int)($item['combatPower']['normal']['max']   ?? 0);
         $cp_boost_min  = (int)($item['combatPower']['boosted']['min']  ?? 0);
         $cp_boost_max  = (int)($item['combatPower']['boosted']['max']  ?? 0);
 
-        // start/end (optional): รองรับทั้ง "2025-10-06T12:00" และ "2025-10-06 12:00"
+        // Date Format
         $sd = $start_date !== '' ? str_replace('T', ' ', $start_date) : null;
         $ed = $end_date   !== '' ? str_replace('T', ' ', $end_date)   : null;
 
-        // เช็คซ้ำ
-        $stmtCheck->execute([$name, $tier_num]);
+        // ----- Check Duplicate -----
+        $stmtCheck->execute([$name, $tier_num, $type]);
         if ($stmtCheck->fetch()) {
-            // มีแล้ว ข้าม (หรือจะอัปเดตก็ได้)
-            continue;
+            continue; // มีแล้วข้าม
         }
 
+        // ----- Insert -----
         $stmtInsert->execute([
-            ':pokemon_id'     => 0,        // ไม่ทราบ id ภายนอก -> เก็บ 0
+            ':pokemon_id'     => 0, // ไม่ทราบ ID ใส่ 0
             ':pokemon_name'   => $name,
             ':pokemon_image'  => $image,
             ':pokemon_tier'   => $tier_num,
+            ':type'           => $type, // ใส่ type ตามที่คำนวณได้
             ':start_date'     => $sd,
             ':end_date'       => $ed,
             ':cp_normal_min'  => $cp_normal_min,
@@ -138,6 +137,7 @@ try {
         'message'  => 'นำเข้าข้อมูลสำเร็จ',
         'inserted' => $inserted
     ]);
+
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();

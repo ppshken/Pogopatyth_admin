@@ -10,7 +10,7 @@ type alert = {
 export function AlertComponent({ message, type }: alert) {
   return (
     <Alert color={type}>
-      <span className="font-medium">Alert!</span> {message}
+      <span className="font-bold">แจ้งเตือน!</span> {message}
     </Alert>
   );
 }

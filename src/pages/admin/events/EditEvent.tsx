@@ -181,7 +181,7 @@ export default function EditEvent() {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              rows={5}
+              rows={20}
               required
             />
           </div>

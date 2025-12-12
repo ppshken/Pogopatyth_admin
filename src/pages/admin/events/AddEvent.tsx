@@ -114,7 +114,7 @@ export default function AddEvent() {
               id="description"
               name="description"
               placeholder="รายละเอียดกิจกรรม..."
-              rows={5}
+              rows={20}
               required
               value={formData.description}
               onChange={handleChange}
